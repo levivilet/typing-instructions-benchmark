@@ -89,7 +89,7 @@ def visible_window(pids):
     return None
 
 
-def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, *, idle=False, capture_type=Capture):
+def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, *, idle=False, warm=False, capture_type=Capture):
     with tempfile.TemporaryDirectory(prefix='typing-trial-') as directory:
         d = Path(directory)
         home = d / 'home'
@@ -155,6 +155,16 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                     if focused_pid not in pids:
                         raise RuntimeError(f'focus is outside editor cgroup: window={focused_window}, pid={focused_pid}')
                     time.sleep(.5)
+                    if warm:
+                        # Diagnostic only: exercise first-edit work, then restore the empty fixture.
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', CHARACTER], check=True)
+                        time.sleep(1)
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+z'], check=True)
+                        time.sleep(1)
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+s'], check=True)
+                        time.sleep(1)
+                        if fixture.read_text() != '':
+                            raise RuntimeError('warm-up undo did not restore empty document')
                     capture.start()
                     measured_started = time.monotonic()
                     if idle:
@@ -169,6 +179,7 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                     capture.cutoff()
                     result = capture.finish()
                     result.update(valid=True, readiness=window,
+                                  diagnosticWarmup=warm,
                                   character=None if idle else CHARACTER, focusWindow=focused_window,
                                   focusPid=focused_pid, pidsAtInput=pids,
                                   inputDispatchSeconds=input_sent-measured_started,

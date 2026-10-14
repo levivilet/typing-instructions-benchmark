@@ -120,7 +120,7 @@ class BenchmarkTest(unittest.TestCase):
         report.validate_result(data, editor['id'])
         invalid = [dict(cutoffAcknowledged=False), dict(inputToCutoffSeconds=.1),
                    dict(instructions=101), dict(valid=False), dict(savedContent=''),
-                   dict(focusPid=999), dict(character='y'), dict(savedContent='x\n\n')]
+                   dict(focusPid=999), dict(diagnosticWarmup=True), dict(character=None), dict(character='y'), dict(savedContent='x\n\n')]
         for changes in invalid:
             broken = copy.deepcopy(data)
             broken['trials'][0].update(changes)

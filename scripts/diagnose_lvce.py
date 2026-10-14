@@ -89,16 +89,16 @@ if __name__ == '__main__':
     editor = next(e for e in json.loads((ROOT / 'config/editors.lock.json').read_text()) if e['id'] == 'lvce')
     results = {'editor': editor, 'host': {'machine': platform.machine(), 'kernel': platform.release(),
                'cpuinfo': Path('/proc/cpuinfo').read_text(), 'commit': os.environ.get('BENCHMARK_COMMIT')},
-               'idle': [], 'typing': []}
-    # Alternate order to limit drift. All twelve comparisons are uninstrumented.
+               'idle': [], 'typing': [], 'warmedTyping': []}
+    # Alternate order to limit drift. All eighteen comparisons are uninstrumented.
     for repeat in range(6):
-        for action in (['idle', 'typing'] if repeat % 2 == 0 else ['typing', 'idle']):
-            results[action].append(trial(editor, args.perf, idle=action == 'idle'))
+        for action in (['idle', 'typing', 'warmedTyping'] if repeat % 2 == 0 else ['warmedTyping', 'typing', 'idle']):
+            results[action].append(trial(editor, args.perf, idle=action == 'idle', warm=action == 'warmedTyping'))
             (OUTPUT / 'controls.json').write_text(json.dumps(results, indent=2) + '\n')
-    if not all(t['valid'] for action in ['idle', 'typing'] for t in results[action]):
+    if not all(t['valid'] for action in ['idle', 'typing', 'warmedTyping'] for t in results[action]):
         raise SystemExit('invalid control trials')
     results['medians'] = {action: statistics.median(t['instructions'] for t in results[action])
-                          for action in ['idle', 'typing']}
+                          for action in ['idle', 'typing', 'warmedTyping']}
     (OUTPUT / 'controls.json').write_text(json.dumps(results, indent=2) + '\n')
     print(json.dumps(results['medians']))
     results['profileTrial'] = trial(editor, args.perf, capture_type=ProfileCapture)
