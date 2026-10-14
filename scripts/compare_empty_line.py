@@ -41,6 +41,7 @@ if __name__ == '__main__':
     candidate = patch(original)
     editor = next(e for e in json.loads((ROOT / 'config/editors.lock.json').read_text()) if e['id'] == 'lvce')
     output = ROOT / 'results' / 'empty-line-comparison.json'
+    output.parent.mkdir(parents=True, exist_ok=True)
     results = {'editor': editor, 'host': {'machine': platform.machine(), 'kernel': platform.release(),
                'cpuinfo': Path('/proc/cpuinfo').read_text()},
                'diagnosticOnly': True, 'bundle': str(bundle.relative_to(ROOT)),
