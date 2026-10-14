@@ -1,1 +1,5 @@
-{"name":"startup-baseline","version":"1.0.0","main":"main.cjs"}
+{
+  "name": "lvce-typing-cpu-benchmark-basic-electron",
+  "private": true,
+  "main": "main.js"
+}

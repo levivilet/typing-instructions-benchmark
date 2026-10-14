@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CHARACTER = 'x'
 RESPONSE_WINDOW_SECONDS = 1.0
 PROTOCOL = {
-    'version': 1,
+    'version': 2,
     'metric': 'retired hardware instructions (user and kernel)',
     'action': 'one ASCII x keypress into an empty editor document',
     'boundary': 'acknowledged perf enable immediately before key injection through acknowledged disable 1.0 seconds after injection',
@@ -24,7 +24,7 @@ PROTOCOL = {
     'cache': 'warm OS filesystem caches permitted; application profiles always fresh',
     'launcher': 'editor cgroup contains editor process tree; controller, X server, desktop, and xdotool stay outside',
     'cutoff': 'perf disable acknowledgement after fixed response window; control latency through acknowledgement is included',
-    'verification': 'save after cutoff and require the fixture file to contain exactly the measured character',
+    'verification': 'save after cutoff and verify the fixture contains exactly x; Geany may add one documented final LF on save',
     'repeats': 3,
 }
 
@@ -48,6 +48,10 @@ def command_for(editor, home, fixture):
     else:
         args += [str(fixture)]
     return [binary, *args]
+
+
+def saved_content_is_valid(editor_id, contents):
+    return contents == CHARACTER or (editor_id == 'geany' and contents == CHARACTER + '\n')
 
 
 def is_main_window(properties):
@@ -94,13 +98,14 @@ def trial(editor, perf):
             for path in [d, home, fixture, *home.iterdir()]:
                 os.chown(path, uid, gid)
         command = command_for(editor, home, fixture)
+        details = {'stage': 'launch', 'command': command, 'fixture': str(fixture)}
         failure_diagnostics = {}
         try:
             with Capture(perf, d) as capture:
                 # Startup, window discovery, settling and focus are excluded.
                 capture.cutoff()
                 with (d / 'stdout').open('w') as stdout, (d / 'stderr').open('w') as stderr:
-                    child = capture.launch(command, env, stdout, stderr)
+                    child = capture.launch(command, env, stdout, stderr, cwd=d)
                     start = time.monotonic()
                     while True:
                         pids = capture.pids()
@@ -115,12 +120,26 @@ def trial(editor, perf):
                         time.sleep(.02)
                     time.sleep(10)
                     window_id = window['windowId']
+                    details.update(window=window, pids=pids, stage='settle')
                     subprocess.run(['xdotool', 'windowactivate', '--sync', window_id], check=True)
-                    subprocess.run(['xdotool', 'mousemove', '--window', window_id, '500', '400'], check=True)
+                    if editor['id'] == 'zed':
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+p'], check=True)
+                        subprocess.run(['xdotool', 'type', '--clearmodifiers', '--delay', '0', '--', fixture.name], check=True)
+                        time.sleep(.5)
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', 'Return'], check=True)
+                        time.sleep(1)
+                        title = subprocess.check_output(['xdotool', 'getwindowname', window_id], text=True).strip()
+                        if fixture.name not in title:
+                            raise RuntimeError(f'Zed did not open fixture {fixture.name}: {title!r}')
+                    positions = {'basic-electron': ('200', '160'), 'lapce': ('500', '150'),
+                                 'zed': ('800', '135')}
+                    x, y = positions.get(editor['id'], ('500', '400'))
+                    subprocess.run(['xdotool', 'mousemove', '--window', window_id, x, y], check=True)
                     subprocess.run(['xdotool', 'click', '1'], check=True)
                     focused_window = subprocess.check_output(['xdotool', 'getwindowfocus'], text=True).strip()
                     focused_pid = int(subprocess.check_output(['xdotool', 'getwindowpid', focused_window], text=True).strip())
                     pids = capture.pids()
+                    details.update(focusWindow=focused_window, focusPid=focused_pid, pids=pids, stage='input')
                     if focused_pid not in pids:
                         raise RuntimeError(f'focus is outside editor cgroup: window={focused_window}, pid={focused_pid}')
                     time.sleep(.5)
@@ -140,19 +159,23 @@ def trial(editor, perf):
                                   inputToCutoffSeconds=capture.disabled_at-input_sent,
                                   measurementSeconds=capture.disabled_at-measured_started,
                                   command=command)
+                    details.update(measurement={key: result.get(key) for key in
+                                    ('instructions', 'measurementSeconds', 'inputDispatchSeconds', 'inputToCutoffSeconds')},
+                                   stage='save')
                     subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+s'], check=True)
                     deadline = time.monotonic() + 5
-                    while fixture.read_text() != CHARACTER and time.monotonic() < deadline:
+                    while not saved_content_is_valid(editor['id'], fixture.read_text()) and time.monotonic() < deadline:
                         time.sleep(.05)
                     saved = fixture.read_text()
-                    if saved != CHARACTER:
+                    details['savedContent'] = saved
+                    if not saved_content_is_valid(editor['id'], saved):
                         raise RuntimeError(f'saved fixture mismatch: expected {CHARACTER!r}, got {saved!r}')
                     result['savedContent'] = saved
             child.wait(timeout=5)
             return result
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
             return {'valid': False, 'error': str(error), 'command': command,
-                    'diagnostics': failure_diagnostics,
+                    'diagnostics': {**details, **failure_diagnostics},
                     **{name: (d / name).read_text(errors='replace')[-8000:]
                        for name in ['stdout', 'stderr', 'perf.log'] if (d / name).exists()}}
 

@@ -1,7 +1,18 @@
-const editor = document.querySelector('#editor')
-document.addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+const textarea = document.querySelector('#editor')
+
+async function load() {
+  textarea.value = await window.editor.read()
+}
+
+async function save() {
+  await window.editor.write(textarea.value)
+}
+
+textarea.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === 's') {
     event.preventDefault()
-    window.benchmark.save(editor.value)
+    void save()
   }
 })
+
+void load()

@@ -9,7 +9,7 @@ from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from benchmark import CHARACTER, PROTOCOL, RESPONSE_WINDOW_SECONDS, is_main_window
+from benchmark import CHARACTER, PROTOCOL, RESPONSE_WINDOW_SECONDS, is_main_window, saved_content_is_valid
 from counters import Capture, parse_counter
 import report
 
@@ -35,6 +35,13 @@ class BenchmarkTest(unittest.TestCase):
         self.assertEqual(PROTOCOL['responseWindowSeconds'], 1.0)
         self.assertEqual(RESPONSE_WINDOW_SECONDS, 1.0)
         self.assertIn('save verification', PROTOCOL['excluded'])
+
+    def test_saved_content_accepts_only_the_typed_character_and_geany_final_lf(self):
+        self.assertTrue(saved_content_is_valid('lvce', 'x'))
+        self.assertTrue(saved_content_is_valid('geany', 'x\n'))
+        self.assertFalse(saved_content_is_valid('lvce', 'x\n'))
+        self.assertFalse(saved_content_is_valid('geany', 'x\n\n'))
+        self.assertFalse(saved_content_is_valid('geany', 'xy'))
 
     def test_main_window_type_defaults_and_rejections(self):
         mapped = 'WM_STATE(WM_STATE):\n    window state: Normal\n'
@@ -99,7 +106,7 @@ class BenchmarkTest(unittest.TestCase):
         report.validate_result(data, editor['id'])
         invalid = [dict(cutoffAcknowledged=False), dict(inputToCutoffSeconds=.1),
                    dict(instructions=101), dict(valid=False), dict(savedContent=''),
-                   dict(focusPid=999), dict(character='y')]
+                   dict(focusPid=999), dict(character='y'), dict(savedContent='x\n\n')]
         for changes in invalid:
             broken = copy.deepcopy(data)
             broken['trials'][0].update(changes)

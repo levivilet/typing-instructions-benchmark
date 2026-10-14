@@ -63,7 +63,7 @@ class Capture:
         if self.process.poll() is not None:
             raise RuntimeError('perf exited before cutoff')
 
-    def launch(self, command, environment, stdout, stderr):
+    def launch(self, command, environment, stdout, stderr, cwd=None):
         # Only the launcher child enters the cgroup; controller, X server,
         # desktop, readiness polling and perf remain outside it.
         def enter_group():
@@ -72,7 +72,7 @@ class Capture:
                 os.setgroups([])
                 os.setgid(int(environment['SUDO_GID']))
                 os.setuid(int(environment['SUDO_UID']))
-        child = subprocess.Popen(command, env=environment, stdout=stdout, stderr=stderr,
+        child = subprocess.Popen(command, cwd=cwd, env=environment, stdout=stdout, stderr=stderr,
                                  preexec_fn=enter_group, start_new_session=True)
         self.children.append(child)
         return child

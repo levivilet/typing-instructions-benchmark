@@ -8,7 +8,7 @@ import math
 from pathlib import Path
 import statistics
 from counters import parse_counter
-from benchmark import CHARACTER, RESPONSE_WINDOW_SECONDS
+from benchmark import CHARACTER, RESPONSE_WINDOW_SECONDS, saved_content_is_valid
 
 ROOT = Path(__file__).resolve().parent.parent
 EDITORS = json.loads((ROOT / "config/editors.lock.json").read_text())
@@ -34,7 +34,8 @@ def validate_result(data: dict, editor_id: str) -> dict:
                 or trial["inputToCutoffSeconds"] < RESPONSE_WINDOW_SECONDS):
             raise ValueError(f"{editor_id}: trial {index} has out-of-range measurements")
         if (trial.get("cutoffAcknowledged") is not True or not trial.get("readiness")
-                or trial.get("character") != CHARACTER or trial.get("savedContent") != CHARACTER
+                or trial.get("character") != CHARACTER
+                or not saved_content_is_valid(editor_id, trial.get("savedContent"))
                 or not isinstance(trial.get("focusPid"), int)
                 or trial.get("focusPid") not in trial.get("pidsAtInput", [])
                 or parse_counter(trial.get("rawCounter", "")) != trial["instructions"]):
