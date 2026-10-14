@@ -60,8 +60,9 @@ jobs:
         env:
           BENCHMARK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           BENCHMARK_COMMIT: ${{ github.sha }}
-          BENCHMARK_ZED_POST_OPEN_SETTLE_SECONDS: ${{ inputs.zed_post_open_settle_seconds || '1' }}
+          BENCHMARK_ZED_POST_OPEN_SETTLE_SECONDS: ${{ github.event.inputs.zed_post_open_settle_seconds || '1' }}
         run: |
+          echo "Zed post-open settling: ${BENCHMARK_ZED_POST_OPEN_SETTLE_SECONDS}s"
           PERF=$(find -L /usr/lib/linux-tools -name perf -type f | sort | tail -n 1)
           xvfb-run -a -s '-screen 0 1280x800x24' bash scripts/run.sh "${{ matrix.editor }}" "$PERF"
       - uses: actions/upload-artifact@v5
