@@ -9,7 +9,9 @@ import statistics
 from benchmark import ROOT, trial
 
 ANCHOR = '      const oldLine = oldState.lines[rowIndex];\n      const newLine = lines[rowIndex];'
-REPLACEMENT = ANCHOR + '\n      if (oldLine.length === 0) {\n        return emptyIncrementalEdits;\n      }'
+REPLACEMENT = ('      const oldLine = oldState.lines[rowIndex];\n'
+               '      if (oldLine.length === 0) {\n        return emptyIncrementalEdits;\n      }\n'
+               '      const newLine = lines[rowIndex];')
 
 
 def patch(source):
@@ -25,7 +27,10 @@ def digest(contents):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--perf', required=True)
+    parser.add_argument('--repeats', type=int, default=30)
     args = parser.parse_args()
+    if args.repeats < 6:
+        parser.error('at least six matched trials required')
     if platform.machine() != 'aarch64':
         raise SystemExit('requires Linux ARM64')
     files = list((ROOT / '.tmp/apps/lvce').rglob('editorWorkerMain.js'))
@@ -43,7 +48,7 @@ if __name__ == '__main__':
                'change': REPLACEMENT, 'baseline': [], 'candidate': []}
     try:
         # Same runner, same pinned dependencies, no profiler, alternating order.
-        for repeat in range(6):
+        for repeat in range(args.repeats):
             for version in (['baseline', 'candidate'] if repeat % 2 == 0 else ['candidate', 'baseline']):
                 bundle.write_text(original if version == 'baseline' else candidate)
                 result = trial(editor, args.perf)

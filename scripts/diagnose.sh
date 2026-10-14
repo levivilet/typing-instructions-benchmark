@@ -8,4 +8,3 @@ for attempt in {1..100}; do
   sleep .05
 done
 sudo --preserve-env=DISPLAY,XAUTHORITY,BENCHMARK_RUN_URL,BENCHMARK_COMMIT python3 scripts/diagnose_lvce.py --perf "$1"
-sudo --preserve-env=DISPLAY,XAUTHORITY python3 scripts/compare_empty_line.py --perf "$1"
