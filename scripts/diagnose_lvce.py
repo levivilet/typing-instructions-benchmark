@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import select
 import signal
 import statistics
 import subprocess
@@ -15,11 +16,22 @@ from counters import Capture
 class ProfileCapture(Capture):
     def start(self):
         self.profile_log = (self.directory / 'profile.log').open('w')
+        self.recorder_fds = []
+        for name in ['profile-control', 'profile-ack']:
+            path = self.directory / name
+            os.mkfifo(path)
+            self.recorder_fds.append(os.open(path, os.O_RDWR | os.O_NONBLOCK))
         self.recorder = subprocess.Popen([
-            self.perf, 'record', '-a', '-e', 'cpu-clock', '-F', '997',
+            self.perf, 'record', '-a', '-e', 'instructions', '-c', '100000',
             '-G', self.group.name, '--call-graph', 'fp',
+            '-D', '-1', '--control', f'fd:{self.recorder_fds[0]},{self.recorder_fds[1]}',
             '-o', str(OUTPUT / 'profile.data'),
-        ], stdout=subprocess.DEVNULL, stderr=self.profile_log)
+        ], pass_fds=tuple(self.recorder_fds), stdout=subprocess.DEVNULL, stderr=self.profile_log)
+        os.write(self.recorder_fds[0], b'enable\n')
+        if not select.select([self.recorder_fds[1]], [], [], 10)[0]:
+            raise RuntimeError('profile recorder did not acknowledge enable')
+        if os.read(self.recorder_fds[1], 256) not in (b'ack\n', b'ack\n\x00'):
+            raise RuntimeError('invalid profile enable acknowledgement')
         super().start()
 
     def cutoff(self):
@@ -47,6 +59,8 @@ class ProfileCapture(Capture):
                 self.profile_log.close()
                 (OUTPUT / 'profile.log').write_text((self.directory / 'profile.log').read_text())
         finally:
+            for fd in getattr(self, 'recorder_fds', []):
+                os.close(fd)
             super().__exit__(*args)
 
 
@@ -81,3 +95,5 @@ if __name__ == '__main__':
         subprocess.run([args.perf, 'report', '--stdio', '--no-children',
                         '--sort', 'comm,dso,symbol', '-i', str(OUTPUT / 'profile.data')],
                        stdout=out, check=True)
+    if '# Samples:' not in (OUTPUT / 'profile.txt').read_text():
+        raise SystemExit('profile contains no instruction samples')
