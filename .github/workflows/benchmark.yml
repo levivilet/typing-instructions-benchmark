@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      zed_post_open_settle_seconds:
+        description: 'Seconds to settle after Zed opens the fixture (0–30; for readiness experiments)'
+        required: false
+        default: '10'
   schedule:
     - cron: '43 5 * * 1'
 permissions:
@@ -55,7 +60,9 @@ jobs:
         env:
           BENCHMARK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           BENCHMARK_COMMIT: ${{ github.sha }}
+          BENCHMARK_ZED_POST_OPEN_SETTLE_SECONDS: ${{ github.event.inputs.zed_post_open_settle_seconds || '10' }}
         run: |
+          echo "Zed post-open settling: ${BENCHMARK_ZED_POST_OPEN_SETTLE_SECONDS}s"
           PERF=$(find -L /usr/lib/linux-tools -name perf -type f | sort | tail -n 1)
           xvfb-run -a -s '-screen 0 1280x800x24' bash scripts/run.sh "${{ matrix.editor }}" "$PERF"
       - uses: actions/upload-artifact@v5
