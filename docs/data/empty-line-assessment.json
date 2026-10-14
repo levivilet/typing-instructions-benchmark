@@ -1,0 +1,27 @@
+{
+  "n": 30,
+  "medians": {
+    "baseline": 86703158.0,
+    "candidate": 86081336.5
+  },
+  "means": {
+    "baseline": 86791126.06666666,
+    "candidate": 86138554.36666666
+  },
+  "ranges": {
+    "baseline": [
+      85718132,
+      89207689
+    ],
+    "candidate": [
+      85027843,
+      87320779
+    ]
+  },
+  "pairedMeanSavings": 652571.7,
+  "confidenceInterval": [
+    293768.3166953103,
+    1011375.0833046896
+  ],
+  "pairsImproved": 22
+}

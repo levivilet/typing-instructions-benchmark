@@ -7,6 +7,7 @@ import platform
 import statistics
 
 from benchmark import ROOT, trial
+from install import download, extract
 
 ANCHOR = '      const oldLine = oldState.lines[rowIndex];\n      const newLine = lines[rowIndex];'
 REPLACEMENT = ('      const oldLine = oldState.lines[rowIndex];\n'
@@ -28,31 +29,49 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--perf', required=True)
     parser.add_argument('--repeats', type=int, default=30)
+    parser.add_argument('--released-candidate', action='store_true')
     args = parser.parse_args()
     if args.repeats < 6:
         parser.error('at least six matched trials required')
     if platform.machine() != 'aarch64':
         raise SystemExit('requires Linux ARM64')
-    files = list((ROOT / '.tmp/apps/lvce').rglob('editorWorkerMain.js'))
+    baseline = json.loads((ROOT / 'config/lvce-baseline.lock.json').read_text())
+    baseline_root = ROOT / '.tmp/apps/lvce-baseline'
+    archive = ROOT / '.tmp' / baseline['archive']
+    download(baseline, archive)
+    extract(baseline, archive, baseline_root)
+    editor = {**baseline, 'binary': '../lvce-baseline/' + baseline['binary']}
+    released = next(e for e in json.loads((ROOT / 'config/editors.lock.json').read_text()) if e['id'] == 'lvce')
+    files = list(baseline_root.rglob('editorWorkerMain.js'))
     if len(files) != 1:
         raise SystemExit('expected exactly one pinned editor bundle')
     bundle = files[0]
     original = bundle.read_text()
-    candidate = patch(original)
-    editor = next(e for e in json.loads((ROOT / 'config/editors.lock.json').read_text()) if e['id'] == 'lvce')
-    output = ROOT / 'results' / 'empty-line-comparison.json'
+    candidate = original if args.released_candidate else patch(original)
+    if args.released_candidate:
+        released_files = list((ROOT / '.tmp/apps/lvce').rglob('editorWorkerMain.js'))
+        if len(released_files) != 1:
+            raise SystemExit('expected one released editor bundle')
+        candidate = released_files[0].read_text()
+        start = candidate.index('const getIncrementalEdits =')
+        function = candidate[start:candidate.index('\n};', start)]
+        if function.index('oldLine.length === 0') > function.index('const newLine ='):
+            raise SystemExit('released artifact lacks expected early return')
+    output = ROOT / 'results' / ('released-artifact-comparison.json' if args.released_candidate else 'empty-line-comparison.json')
     output.parent.mkdir(parents=True, exist_ok=True)
     results = {'editor': editor, 'host': {'machine': platform.machine(), 'kernel': platform.release(),
                'cpuinfo': Path('/proc/cpuinfo').read_text()},
-               'diagnosticOnly': True, 'bundle': str(bundle.relative_to(ROOT)),
+               'diagnosticOnly': True, 'releasedCandidate': released if args.released_candidate else None, 'bundle': str(bundle.relative_to(ROOT)),
                'baselineSha256': digest(original), 'candidateSha256': digest(candidate),
-               'change': REPLACEMENT, 'baseline': [], 'candidate': []}
+               'change': 'unmodified published Debian artifacts' if args.released_candidate else REPLACEMENT, 'baseline': [], 'candidate': []}
     try:
         # Same runner, same pinned dependencies, no profiler, alternating order.
         for repeat in range(args.repeats):
             for version in (['baseline', 'candidate'] if repeat % 2 == 0 else ['candidate', 'baseline']):
-                bundle.write_text(original if version == 'baseline' else candidate)
-                result = trial(editor, args.perf)
+                if not args.released_candidate:
+                    bundle.write_text(original if version == 'baseline' else candidate)
+                selected = released if args.released_candidate and version == 'candidate' else editor
+                result = trial(selected, args.perf)
                 result['diagnosticCandidate'] = version
                 results[version].append(result)
                 output.write_text(json.dumps(results, indent=2) + '\n')
@@ -63,4 +82,5 @@ if __name__ == '__main__':
         output.write_text(json.dumps(results, indent=2) + '\n')
         print(json.dumps(results['medians']))
     finally:
-        bundle.write_text(original)
+        if not args.released_candidate:
+            bundle.write_text(original)

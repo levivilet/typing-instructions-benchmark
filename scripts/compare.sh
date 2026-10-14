@@ -7,4 +7,6 @@ for attempt in {1..100}; do
   if xprop -root _NET_SUPPORTING_WM_CHECK | grep -q 'window id'; then break; fi
   sleep .05
 done
-sudo --preserve-env=DISPLAY,XAUTHORITY,BENCHMARK_RUN_URL,BENCHMARK_COMMIT python3 scripts/compare_empty_line.py --perf "$1"
+comparison_perf="$1"
+shift
+sudo --preserve-env=DISPLAY,XAUTHORITY,BENCHMARK_RUN_URL,BENCHMARK_COMMIT python3 scripts/compare_empty_line.py --perf "$comparison_perf" "$@"
