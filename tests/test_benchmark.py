@@ -14,6 +14,7 @@ from benchmark import (CHARACTER, DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, PROTOCOL
                        zed_post_open_settle_seconds)
 from counters import Capture, parse_counter
 import report
+from compare_empty_line import ANCHOR, REPLACEMENT, patch
 
 
 def trial(count=100):
@@ -40,6 +41,12 @@ class BenchmarkTest(unittest.TestCase):
         for value in ['-1', '30.1', 'not-a-number']:
             with self.subTest(value=value), self.assertRaises(ValueError):
                 zed_post_open_settle_seconds(value)
+
+    def test_candidate_patch_fails_closed_and_preserves_surrounding_bundle(self):
+        self.assertEqual(patch('before\n' + ANCHOR + '\nafter'), 'before\n' + REPLACEMENT + '\nafter')
+        for source in ['', ANCHOR + ANCHOR]:
+            with self.assertRaises(ValueError):
+                patch(source)
 
     def test_protocol_defines_one_character_and_fixed_response_window(self):
         self.assertEqual(PROTOCOL['action'], 'one ASCII x keypress into an empty editor document')
@@ -120,7 +127,7 @@ class BenchmarkTest(unittest.TestCase):
         report.validate_result(data, editor['id'])
         invalid = [dict(cutoffAcknowledged=False), dict(inputToCutoffSeconds=.1),
                    dict(instructions=101), dict(valid=False), dict(savedContent=''),
-                   dict(focusPid=999), dict(character='y'), dict(savedContent='x\n\n')]
+                   dict(focusPid=999), dict(diagnosticWarmup=True), dict(diagnosticCandidate='candidate'), dict(character=None), dict(character='y'), dict(savedContent='x\n\n')]
         for changes in invalid:
             broken = copy.deepcopy(data)
             broken['trials'][0].update(changes)

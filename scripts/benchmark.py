@@ -89,7 +89,7 @@ def visible_window(pids):
     return None
 
 
-def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS):
+def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, *, idle=False, warm=False, capture_type=Capture):
     with tempfile.TemporaryDirectory(prefix='typing-trial-') as directory:
         d = Path(directory)
         home = d / 'home'
@@ -113,7 +113,7 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS)
         details = {'stage': 'launch', 'command': command, 'fixture': str(fixture)}
         failure_diagnostics = {}
         try:
-            with Capture(perf, d) as capture:
+            with capture_type(perf, d) as capture:
                 # Startup, window discovery, settling and focus are excluded.
                 capture.cutoff()
                 with (d / 'stdout').open('w') as stdout, (d / 'stderr').open('w') as stderr:
@@ -155,9 +155,23 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS)
                     if focused_pid not in pids:
                         raise RuntimeError(f'focus is outside editor cgroup: window={focused_window}, pid={focused_pid}')
                     time.sleep(.5)
+                    if warm:
+                        # Diagnostic only: exercise first-edit work, then restore the empty fixture.
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', CHARACTER], check=True)
+                        time.sleep(1)
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+z'], check=True)
+                        time.sleep(1)
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+s'], check=True)
+                        time.sleep(1)
+                        if fixture.read_text() != '':
+                            raise RuntimeError('warm-up undo did not restore empty document')
                     capture.start()
                     measured_started = time.monotonic()
-                    subprocess.run(['xdotool', 'key', '--clearmodifiers', CHARACTER], check=True)
+                    if idle:
+                        # Match the input driver's elapsed time without sending an event.
+                        subprocess.run(['xdotool', 'sleep', '0.015'], check=True)
+                    else:
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', CHARACTER], check=True)
                     input_sent = time.monotonic()
                     remaining = input_sent + RESPONSE_WINDOW_SECONDS - time.monotonic()
                     if remaining > 0:
@@ -165,7 +179,8 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS)
                     capture.cutoff()
                     result = capture.finish()
                     result.update(valid=True, readiness=window,
-                                  character=CHARACTER, focusWindow=focused_window,
+                                  diagnosticWarmup=warm,
+                                  character=None if idle else CHARACTER, focusWindow=focused_window,
                                   focusPid=focused_pid, pidsAtInput=pids,
                                   inputDispatchSeconds=input_sent-measured_started,
                                   inputToCutoffSeconds=capture.disabled_at-input_sent,
@@ -178,12 +193,13 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS)
                                    stage='save')
                     subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+s'], check=True)
                     deadline = time.monotonic() + 5
-                    while not saved_content_is_valid(editor['id'], fixture.read_text()) and time.monotonic() < deadline:
+                    valid_saved = (lambda contents: contents == '') if idle else (lambda contents: saved_content_is_valid(editor['id'], contents))
+                    while not valid_saved(fixture.read_text()) and time.monotonic() < deadline:
                         time.sleep(.05)
                     saved = fixture.read_text()
                     details['savedContent'] = saved
-                    if not saved_content_is_valid(editor['id'], saved):
-                        raise RuntimeError(f'saved fixture mismatch: expected {CHARACTER!r}, got {saved!r}')
+                    if not valid_saved(saved):
+                        raise RuntimeError(f'saved fixture mismatch: expected {('' if idle else CHARACTER)!r}, got {saved!r}')
                     result['savedContent'] = saved
             child.wait(timeout=5)
             return result

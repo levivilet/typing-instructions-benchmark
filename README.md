@@ -72,3 +72,39 @@ and the full-report regression checks on the intended ARM runner matrix. Main
 pushes, scheduled runs, and manual runs publish three trials per editor and
 deploy the validated report to GitHub Pages. CI does not publish a partial
 matrix.
+
+## LVCE diagnosis
+
+[The first-character investigation](docs/lvce-first-character-instructions.md)
+records matched controls, isolated candidate measurements and their limits.
+The separate diagnostic workflow retains the standard six-editor gates.
+
+On the same ARM64 hardware with pinned LVCE installed, run idle/cold/warmed
+controls and a separate instruction-sampled profile with:
+
+```sh
+xvfb-run -a -s '-screen 0 1280x800x24' bash scripts/diagnose.sh "$PERF"
+```
+
+The bounded empty-line comparison uses thirty alternating baseline/candidate
+pairs and verifies exactly `x` after every trial:
+
+```sh
+xvfb-run -a -s '-screen 0 1280x800x24' bash scripts/compare.sh "$PERF"
+```
+
+Warm-up and locally edited bundles are diagnostic data and cannot be published
+as the standard first-character metric. The comparison restores the pristine
+bundle even on failure. A profile's instrumented count is not a comparison
+measurement.
+
+The released-artifact comparison installs the historical baseline from
+`config/lvce-baseline.lock.json` and uses the current official LVCE pin without
+editing either bundle:
+
+```sh
+xvfb-run -a -s '-screen 0 1280x800x24' bash scripts/compare.sh "$PERF" --released-candidate --repeats 6
+```
+
+Its version-to-version change can include unrelated improvements; keep it
+separate from the isolated source-change result.
