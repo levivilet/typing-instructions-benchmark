@@ -27,6 +27,8 @@ class ProfileCapture(Capture):
         if hasattr(self, 'recorder'):
             self.recorder.send_signal(signal.SIGINT)
             self.recorder.wait(timeout=10)
+            # perf creates root-owned mode-0600 data; artifact upload runs unprivileged.
+            (OUTPUT / 'profile.data').chmod(0o644)
 
     def finish(self):
         result = super().finish()
