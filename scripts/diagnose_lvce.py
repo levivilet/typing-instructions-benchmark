@@ -14,6 +14,11 @@ from counters import Capture
 
 
 class ProfileCapture(Capture):
+    def launch(self, command, environment, stdout, stderr, cwd=None):
+        # Only the separate diagnostic trial exposes JS names to perf.
+        command = [command[0], '--js-flags=--perf-basic-prof --interpreted-frames-native-stack', *command[1:]]
+        return super().launch(command, environment, stdout, stderr, cwd)
+
     def start(self):
         self.profile_log = (self.directory / 'profile.log').open('w')
         self.recorder_fds = []
@@ -48,6 +53,15 @@ class ProfileCapture(Capture):
             str(pid): Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode(errors='replace')
             for pid in self.pids() if Path(f'/proc/{pid}/cmdline').exists()
         }
+        # Resolve V8's /tmp/perf-PID.map while the application's mappings exist.
+        with (OUTPUT / 'profile.txt').open('w') as out:
+            subprocess.run([self.perf, 'report', '--stdio', '--no-children',
+                            '--sort', 'comm,dso,symbol', '-i', str(OUTPUT / 'profile.data')],
+                           stdout=out, check=True)
+        for pid in self.pids():
+            path = Path(f'/tmp/perf-{pid}.map')
+            if path.exists():
+                (OUTPUT / path.name).write_bytes(path.read_bytes())
         return result
 
     def __exit__(self, *args):
@@ -91,9 +105,5 @@ if __name__ == '__main__':
     (OUTPUT / 'controls.json').write_text(json.dumps(results, indent=2) + '\n')
     if not results['profileTrial']['valid']:
         raise SystemExit('invalid profile trial')
-    with (OUTPUT / 'profile.txt').open('w') as out:
-        subprocess.run([args.perf, 'report', '--stdio', '--no-children',
-                        '--sort', 'comm,dso,symbol', '-i', str(OUTPUT / 'profile.data')],
-                       stdout=out, check=True)
     if '# Samples:' not in (OUTPUT / 'profile.txt').read_text():
         raise SystemExit('profile contains no instruction samples')
