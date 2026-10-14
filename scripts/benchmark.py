@@ -12,6 +12,7 @@ from counters import Capture
 ROOT = Path(__file__).resolve().parent.parent
 CHARACTER = 'x'
 RESPONSE_WINDOW_SECONDS = 1.0
+DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS = 10.0
 MAX_ZED_POST_OPEN_SETTLE_SECONDS = 30.0
 PROTOCOL = {
     'version': 3,
@@ -88,7 +89,7 @@ def visible_window(pids):
     return None
 
 
-def trial(editor, perf, zed_settle_seconds=1.0):
+def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS):
     with tempfile.TemporaryDirectory(prefix='typing-trial-') as directory:
         d = Path(directory)
         home = d / 'home'
@@ -212,7 +213,8 @@ def main():
         raise SystemExit('requires Linux ARM64')
     if editor.get('package'):
         host['packageVersion'] = subprocess.check_output(['dpkg-query', '-W', '-f=${Version}', editor['package']], text=True)
-    zed_settle_seconds = zed_post_open_settle_seconds(os.environ.get('BENCHMARK_ZED_POST_OPEN_SETTLE_SECONDS', '1'))
+    zed_settle_seconds = zed_post_open_settle_seconds(os.environ.get(
+        'BENCHMARK_ZED_POST_OPEN_SETTLE_SECONDS', str(DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS)))
     trials = [dict(trial(editor, args.perf, zed_settle_seconds), repeat=i+1) for i in range(args.repeats)]
     Path('results').mkdir(exist_ok=True)
     Path('results/results.json').write_text(json.dumps(dict(editor=editor, protocol=PROTOCOL, host=host, trials=trials), indent=2)+'\n')

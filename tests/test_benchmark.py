@@ -9,7 +9,9 @@ from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from benchmark import CHARACTER, PROTOCOL, RESPONSE_WINDOW_SECONDS, is_main_window, saved_content_is_valid, zed_post_open_settle_seconds
+from benchmark import (CHARACTER, DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, PROTOCOL,
+                       RESPONSE_WINDOW_SECONDS, is_main_window, saved_content_is_valid,
+                       zed_post_open_settle_seconds)
 from counters import Capture, parse_counter
 import report
 
@@ -31,6 +33,7 @@ def result(editor, counts=(100, 300, 200)):
 
 class BenchmarkTest(unittest.TestCase):
     def test_zed_post_open_settle_setting_is_bounded(self):
+        self.assertEqual(DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, 10.0)
         self.assertEqual(zed_post_open_settle_seconds('1'), 1.0)
         self.assertEqual(zed_post_open_settle_seconds('10'), 10.0)
         self.assertEqual(zed_post_open_settle_seconds('0'), 0.0)
