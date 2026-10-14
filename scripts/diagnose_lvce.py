@@ -1,0 +1,81 @@
+"""Separate no-input controls and sampled profiles from published measurements."""
+import argparse
+import json
+import os
+from pathlib import Path
+import platform
+import signal
+import statistics
+import subprocess
+
+from benchmark import ROOT, trial
+from counters import Capture
+
+
+class ProfileCapture(Capture):
+    def start(self):
+        self.profile_log = (self.directory / 'profile.log').open('w')
+        self.recorder = subprocess.Popen([
+            self.perf, 'record', '-a', '-e', 'cpu-clock', '-F', '997',
+            '-G', self.group.name, '--call-graph', 'fp',
+            '-o', str(OUTPUT / 'profile.data'),
+        ], stdout=subprocess.DEVNULL, stderr=self.profile_log)
+        super().start()
+
+    def cutoff(self):
+        super().cutoff()
+        if hasattr(self, 'recorder'):
+            self.recorder.send_signal(signal.SIGINT)
+            self.recorder.wait(timeout=10)
+
+    def finish(self):
+        result = super().finish()
+        result['processes'] = {
+            str(pid): Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode(errors='replace')
+            for pid in self.pids() if Path(f'/proc/{pid}/cmdline').exists()
+        }
+        return result
+
+    def __exit__(self, *args):
+        try:
+            if hasattr(self, 'recorder') and self.recorder.poll() is None:
+                self.recorder.send_signal(signal.SIGINT)
+                self.recorder.wait(timeout=10)
+            if hasattr(self, 'profile_log'):
+                self.profile_log.close()
+                (OUTPUT / 'profile.log').write_text((self.directory / 'profile.log').read_text())
+        finally:
+            super().__exit__(*args)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--perf', required=True)
+    args = parser.parse_args()
+    if platform.machine() != 'aarch64':
+        raise SystemExit('requires Linux ARM64')
+    OUTPUT = ROOT / 'results' / 'diagnosis'
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+    editor = next(e for e in json.loads((ROOT / 'config/editors.lock.json').read_text()) if e['id'] == 'lvce')
+    results = {'editor': editor, 'host': {'machine': platform.machine(), 'kernel': platform.release(),
+               'cpuinfo': Path('/proc/cpuinfo').read_text(), 'commit': os.environ.get('BENCHMARK_COMMIT')},
+               'idle': [], 'typing': []}
+    # Alternate order to limit drift. All twelve comparisons are uninstrumented.
+    for repeat in range(6):
+        for action in (['idle', 'typing'] if repeat % 2 == 0 else ['typing', 'idle']):
+            results[action].append(trial(editor, args.perf, idle=action == 'idle'))
+            (OUTPUT / 'controls.json').write_text(json.dumps(results, indent=2) + '\n')
+    if not all(t['valid'] for action in ['idle', 'typing'] for t in results[action]):
+        raise SystemExit('invalid control trials')
+    results['medians'] = {action: statistics.median(t['instructions'] for t in results[action])
+                          for action in ['idle', 'typing']}
+    (OUTPUT / 'controls.json').write_text(json.dumps(results, indent=2) + '\n')
+    print(json.dumps(results['medians']))
+    results['profileTrial'] = trial(editor, args.perf, capture_type=ProfileCapture)
+    (OUTPUT / 'controls.json').write_text(json.dumps(results, indent=2) + '\n')
+    if not results['profileTrial']['valid']:
+        raise SystemExit('invalid profile trial')
+    with (OUTPUT / 'profile.txt').open('w') as out:
+        subprocess.run([args.perf, 'report', '--stdio', '--no-children',
+                        '--sort', 'comm,dso,symbol', '-i', str(OUTPUT / 'profile.data')],
+                       stdout=out, check=True)
