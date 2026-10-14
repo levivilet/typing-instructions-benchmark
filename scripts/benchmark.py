@@ -12,6 +12,7 @@ from counters import Capture
 ROOT = Path(__file__).resolve().parent.parent
 CHARACTER = 'x'
 RESPONSE_WINDOW_SECONDS = 1.0
+MAX_ZED_POST_OPEN_SETTLE_SECONDS = 30.0
 PROTOCOL = {
     'version': 3,
     'metric': 'retired hardware instructions (user and kernel)',
@@ -54,6 +55,16 @@ def saved_content_is_valid(editor_id, contents):
     return contents == CHARACTER or (editor_id in {'geany', 'zed'} and contents == CHARACTER + '\n')
 
 
+def zed_post_open_settle_seconds(value):
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError) as error:
+        raise ValueError('Zed post-open settling must be a number from 0 to 30 seconds') from error
+    if not 0 <= seconds <= MAX_ZED_POST_OPEN_SETTLE_SECONDS:
+        raise ValueError('Zed post-open settling must be a number from 0 to 30 seconds')
+    return seconds
+
+
 def is_main_window(properties):
     lines = properties.splitlines()
     type_line = next((line for line in lines if line.startswith('_NET_WM_WINDOW_TYPE')), '')
@@ -77,7 +88,7 @@ def visible_window(pids):
     return None
 
 
-def trial(editor, perf):
+def trial(editor, perf, zed_settle_seconds=1.0):
     with tempfile.TemporaryDirectory(prefix='typing-trial-') as directory:
         d = Path(directory)
         home = d / 'home'
@@ -127,7 +138,7 @@ def trial(editor, perf):
                         subprocess.run(['xdotool', 'type', '--clearmodifiers', '--delay', '0', '--', fixture.name], check=True)
                         time.sleep(.5)
                         subprocess.run(['xdotool', 'key', '--clearmodifiers', 'Return'], check=True)
-                        time.sleep(1)
+                        time.sleep(zed_settle_seconds)
                         title = subprocess.check_output(['xdotool', 'getwindowname', window_id], text=True).strip()
                         if fixture.name not in title:
                             raise RuntimeError(f'Zed did not open fixture {fixture.name}: {title!r}')
@@ -159,6 +170,8 @@ def trial(editor, perf):
                                   inputToCutoffSeconds=capture.disabled_at-input_sent,
                                   measurementSeconds=capture.disabled_at-measured_started,
                                   command=command)
+                    if editor['id'] == 'zed':
+                        result['postOpenSettleSeconds'] = zed_settle_seconds
                     details.update(measurement={key: result.get(key) for key in
                                     ('instructions', 'measurementSeconds', 'inputDispatchSeconds', 'inputToCutoffSeconds')},
                                    stage='save')
@@ -199,7 +212,8 @@ def main():
         raise SystemExit('requires Linux ARM64')
     if editor.get('package'):
         host['packageVersion'] = subprocess.check_output(['dpkg-query', '-W', '-f=${Version}', editor['package']], text=True)
-    trials = [dict(trial(editor, args.perf), repeat=i+1) for i in range(args.repeats)]
+    zed_settle_seconds = zed_post_open_settle_seconds(os.environ.get('BENCHMARK_ZED_POST_OPEN_SETTLE_SECONDS', '1'))
+    trials = [dict(trial(editor, args.perf, zed_settle_seconds), repeat=i+1) for i in range(args.repeats)]
     Path('results').mkdir(exist_ok=True)
     Path('results/results.json').write_text(json.dumps(dict(editor=editor, protocol=PROTOCOL, host=host, trials=trials), indent=2)+'\n')
     if not all(t['valid'] for t in trials):

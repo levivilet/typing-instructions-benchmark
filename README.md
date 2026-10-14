@@ -35,6 +35,10 @@ invalid trials are never published.
   value is reported as zero.
 - Three trials per editor use fresh application profiles. The chart compares
   the median instruction count per trial. OS filesystem caches may be warm.
+- Manual workflow runs can set `zed_post_open_settle_seconds` from 0 to 30 to
+  compare Zed's fixture-opening settle time. The value is recorded in each
+  Zed raw trial and does not change the one-second counted response window.
+  The default remains one second.
 - Editor downloads are pinned by version and SHA-256 in
   `config/editors.lock.json`. Raw JSON retains all counts, timings, host and
   protocol metadata, focus evidence, and verified saved contents.
