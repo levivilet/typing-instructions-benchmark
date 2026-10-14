@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CHARACTER = 'x'
 RESPONSE_WINDOW_SECONDS = 1.0
 PROTOCOL = {
-    'version': 2,
+    'version': 3,
     'metric': 'retired hardware instructions (user and kernel)',
     'action': 'one ASCII x keypress into an empty editor document',
     'boundary': 'acknowledged perf enable immediately before key injection through acknowledged disable 1.0 seconds after injection',
@@ -24,7 +24,7 @@ PROTOCOL = {
     'cache': 'warm OS filesystem caches permitted; application profiles always fresh',
     'launcher': 'editor cgroup contains editor process tree; controller, X server, desktop, and xdotool stay outside',
     'cutoff': 'perf disable acknowledgement after fixed response window; control latency through acknowledgement is included',
-    'verification': 'save after cutoff and verify the fixture contains exactly x; Geany may add one documented final LF on save',
+    'verification': 'save after cutoff and verify the fixture contains exactly x; Geany and Zed may add one documented final LF on save',
     'repeats': 3,
 }
 
@@ -51,7 +51,7 @@ def command_for(editor, home, fixture):
 
 
 def saved_content_is_valid(editor_id, contents):
-    return contents == CHARACTER or (editor_id == 'geany' and contents == CHARACTER + '\n')
+    return contents == CHARACTER or (editor_id in {'geany', 'zed'} and contents == CHARACTER + '\n')
 
 
 def is_main_window(properties):

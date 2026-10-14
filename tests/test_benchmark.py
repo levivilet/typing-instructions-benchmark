@@ -36,12 +36,15 @@ class BenchmarkTest(unittest.TestCase):
         self.assertEqual(RESPONSE_WINDOW_SECONDS, 1.0)
         self.assertIn('save verification', PROTOCOL['excluded'])
 
-    def test_saved_content_accepts_only_the_typed_character_and_geany_final_lf(self):
+    def test_saved_content_accepts_only_the_typed_character_and_native_final_lf(self):
         self.assertTrue(saved_content_is_valid('lvce', 'x'))
         self.assertTrue(saved_content_is_valid('geany', 'x\n'))
+        self.assertTrue(saved_content_is_valid('zed', 'x\n'))
         self.assertFalse(saved_content_is_valid('lvce', 'x\n'))
         self.assertFalse(saved_content_is_valid('geany', 'x\n\n'))
+        self.assertFalse(saved_content_is_valid('zed', 'x\n\n'))
         self.assertFalse(saved_content_is_valid('geany', 'xy'))
+        self.assertFalse(saved_content_is_valid('zed', 'xy'))
 
     def test_main_window_type_defaults_and_rejections(self):
         mapped = 'WM_STATE(WM_STATE):\n    window state: Normal\n'

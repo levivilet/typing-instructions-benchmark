@@ -27,8 +27,9 @@ invalid trials are never published.
   cleanup, the desktop, and the X server are outside the counted cgroup. The
   counter enable/disable control latency is recorded and included.
 - After counter cutoff, the harness saves the document and requires the file
-  to contain exactly `x`. Geany's native save behavior may add one final line
-  feed; this exact case is accepted and the raw content is retained. Focus
+  to contain exactly `x`. Geany and Zed's native save behavior may add one
+  final line feed; this exact case is accepted and the raw content is retained.
+  Focus
   loss, a missing or extra character, a failed save, unsupported or multiplexed
   counters, or an incomplete editor matrix invalidate the trial; no invalid
   value is reported as zero.
