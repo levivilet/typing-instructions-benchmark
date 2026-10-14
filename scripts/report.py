@@ -36,6 +36,7 @@ def validate_result(data: dict, editor_id: str) -> dict:
         if (trial.get("cutoffAcknowledged") is not True or not trial.get("readiness")
                 or trial.get("character") != CHARACTER
                 or trial.get("diagnosticWarmup", False)
+                or trial.get("diagnosticCandidate")
                 or not saved_content_is_valid(editor_id, trial.get("savedContent"))
                 or not isinstance(trial.get("focusPid"), int)
                 or trial.get("focusPid") not in trial.get("pidsAtInput", [])
