@@ -2,28 +2,28 @@
   {
     "id": "lvce",
     "name": "LVCE Editor",
-    "version": "v0.122.15",
-    "archive": "lvce-v0.122.15_arm64.deb",
-    "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.122.15/lvce-v0.122.15_arm64.deb",
-    "sha256": "901fad5b4c8279be8af70120e55bfd873fd905a01695b4f3c863c29e493e4434",
+    "version": "v0.123.6",
+    "archive": "lvce-v0.123.6_arm64.deb",
+    "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.123.6/lvce-v0.123.6_arm64.deb",
+    "sha256": "df3d3ca6e5a857db5bb69bf84f2c6cfb9b20f89ea3edf2fe23ac875c2a82a8e0",
     "binary": "usr/lib/lvce/lvce"
   },
   {
     "id": "vscode",
     "name": "VS Code",
-    "version": "1.141.1",
-    "archive": "vscode-arm64.tar.gz",
-    "url": "https://vscode.download.prss.microsoft.com/dbazure/download/stable/7baac39ec3ca969dab74ac12c097f6a486e46593/code-stable-arm64-1791832958.tar.gz",
-    "sha256": "4d41625900780ab8b3fbe45cbae572d6ec61977ed33685b5326bf81ac12a1a40",
+    "version": "1.142.0",
+    "archive": "vscode-1.142.0-arm64.tar.gz",
+    "url": "https://vscode.download.prss.microsoft.com/dbazure/download/stable/6d62b1d5dace93a33b3a6d3eca1317bd5e15bcb1/code-stable-arm64-1792034875.tar.gz",
+    "sha256": "cb4ce5183a29b1a13aeb6409d5430c896fa35aad21097be1f874fbb4cf1e7e62",
     "binary": "VSCode-linux-arm64/code"
   },
   {
     "id": "zed",
     "name": "Zed",
-    "version": "v1.18.1",
-    "archive": "zed-linux-aarch64.tar.gz",
-    "url": "https://github.com/zed-industries/zed/releases/download/v1.18.1/zed-linux-aarch64.tar.gz",
-    "sha256": "7ee93bcd1059c4f0d700578ccfa00aebda5fc521c943fe3ffbf71aac41a081a7",
+    "version": "v1.24.2",
+    "archive": "zed-v1.24.2-linux-aarch64.tar.gz",
+    "url": "https://github.com/zed-industries/zed/releases/download/v1.24.2/zed-linux-aarch64.tar.gz",
+    "sha256": "96a54806a7e286452078bdfc94b63c7bf6b8324ffcb16c5c60ff1fd96743ea45",
     "binary": "zed.app/libexec/zed-editor"
   },
   {
@@ -38,17 +38,17 @@
   {
     "id": "basic-electron",
     "name": "Basic Electron",
-    "version": "v44.3.0",
-    "archive": "electron-v44.3.0-linux-arm64.zip",
-    "url": "https://github.com/electron/electron/releases/download/v44.3.0/electron-v44.3.0-linux-arm64.zip",
-    "sha256": "c11fde221c08e9bffdb3336579f09bd934a009862f509af5033616876741be24",
+    "version": "v44.7.2",
+    "archive": "electron-v44.7.2-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v44.7.2/electron-v44.7.2-linux-arm64.zip",
+    "sha256": "f8ecb0702b6a0b10274d2c3043dddaa22da77addcab98e7e0b1e0d4f6c2d93e9",
     "binary": "electron",
     "app": "basic-electron"
   },
   {
     "id": "geany",
     "name": "Geany",
-    "version": "Ubuntu 24.04 package",
+    "version": "Ubuntu 24.04 package 2.0-1build2",
     "binary": "geany",
     "package": "geany"
   }
