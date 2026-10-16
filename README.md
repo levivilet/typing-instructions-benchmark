@@ -13,7 +13,8 @@ invalid trials are never published.
 ## Measurement protocol
 
 - Linux ARM64, Ubuntu 24.04 ARM, X11/Xvfb, one editor per runner. The selected
-  matrix is LVCE Editor, VS Code, Zed, Lapce, Geany, and Basic Electron. This is
+  matrix is LVCE Editor, VS Code, Zed, Lapce, Geany, Basic Electron, and
+  CodeMirror 6 in Electron. This is
   the supported ARM artifact subset of the desktop comparison set.
 - Each trial opens a fresh empty text file using a fresh HOME and XDG profile.
   Startup and a 10-second settling period happen with counters disabled.
@@ -43,6 +44,10 @@ invalid trials are never published.
 - Editor downloads are pinned by version and SHA-256 in
   `config/editors.lock.json`. Raw JSON retains all counts, timings, host and
   protocol metadata, focus evidence, and verified saved contents.
+- The CodeMirror 6 comparison uses the pinned `@codemirror/state` and
+  `@codemirror/view` packages with an empty extension list. It provides basic
+  document editing without syntax highlighting or language services; this
+  minimal configuration is recorded with its benchmark version.
 
 The fixed one-second response window makes the measured interval explicit. It
 captures the keypress handling and immediate editor work, while background work
@@ -67,7 +72,7 @@ Use `python3 scripts/benchmark.py --help` to see trial options.
 
 ## CI
 
-Every pull request runs hardware-accounting acceptance, all six editor trials,
+Every pull request runs hardware-accounting acceptance, all seven editor trials,
 and the full-report regression checks on the intended ARM runner matrix. Main
 pushes, scheduled runs, and manual runs publish three trials per editor and
 deploy the validated report to GitHub Pages. CI does not publish a partial
@@ -77,7 +82,7 @@ matrix.
 
 [The first-character investigation](docs/lvce-first-character-instructions.md)
 records matched controls, isolated candidate measurements and their limits.
-The separate diagnostic workflow retains the standard six-editor gates.
+The separate diagnostic workflow retains the standard seven-editor gates.
 
 On the same ARM64 hardware with pinned LVCE installed, run idle/cold/warmed
 controls and a separate instruction-sampled profile with:
