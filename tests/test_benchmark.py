@@ -38,6 +38,8 @@ class BenchmarkTest(unittest.TestCase):
         command = command_for(editor, Path('/tmp/profile-home'), Path('/tmp/fixture.txt'))
         self.assertIn(str(ROOT / 'codemirror-electron'), command)
         self.assertEqual(command[-1], '/tmp/fixture.txt')
+        app = json.loads((ROOT / 'codemirror-electron/package.json').read_text())
+        self.assertEqual(app['main'], 'main.js')
         self.assertTrue(saved_content_is_valid('codemirror6', 'x'))
         self.assertFalse(saved_content_is_valid('codemirror6', 'x\n'))
 
