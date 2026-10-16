@@ -9,7 +9,7 @@ from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from benchmark import (CHARACTER, DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, PROTOCOL,
+from benchmark import (CHARACTER, DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, PROTOCOL, command_for,
                        RESPONSE_WINDOW_SECONDS, is_main_window, saved_content_is_valid,
                        zed_post_open_settle_seconds)
 from counters import Capture, parse_counter
@@ -33,6 +33,16 @@ def result(editor, counts=(100, 300, 200)):
 
 
 class BenchmarkTest(unittest.TestCase):
+    def test_codemirror_uses_its_electron_app_and_exact_saved_contents(self):
+        editor = next(editor for editor in report.EDITORS if editor['id'] == 'codemirror6')
+        command = command_for(editor, Path('/tmp/profile-home'), Path('/tmp/fixture.txt'))
+        self.assertIn(str(ROOT / 'codemirror-electron'), command)
+        self.assertEqual(command[-1], '/tmp/fixture.txt')
+        app = json.loads((ROOT / 'codemirror-electron/package.json').read_text())
+        self.assertEqual(app['main'], 'main.js')
+        self.assertTrue(saved_content_is_valid('codemirror6', 'x'))
+        self.assertFalse(saved_content_is_valid('codemirror6', 'x\n'))
+
     def test_zed_post_open_settle_setting_is_bounded(self):
         self.assertEqual(DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, 10.0)
         self.assertEqual(zed_post_open_settle_seconds('1'), 1.0)

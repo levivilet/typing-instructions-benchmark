@@ -36,6 +36,16 @@
     "binary": "Lapce/lapce"
   },
   {
+    "id": "codemirror6",
+    "name": "CodeMirror 6 (Electron)",
+    "version": "CodeMirror 6.7.6 / 6.43.14 (minimal state + view; no language extensions)",
+    "archive": "electron-v44.7.2-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v44.7.2/electron-v44.7.2-linux-arm64.zip",
+    "sha256": "f8ecb0702b6a0b10274d2c3043dddaa22da77addcab98e7e0b1e0d4f6c2d93e9",
+    "binary": "electron",
+    "app": "codemirror-electron"
+  },
+  {
     "id": "basic-electron",
     "name": "Basic Electron",
     "version": "v44.7.2",

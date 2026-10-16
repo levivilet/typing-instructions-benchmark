@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        editor: [lvce, vscode, zed, lapce, geany, basic-electron]
+        editor: [lvce, vscode, zed, lapce, geany, basic-electron, codemirror6]
     steps:
       - uses: actions/checkout@v5
       - name: Install desktop and perf
