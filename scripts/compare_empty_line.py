@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import platform
+import re
 import statistics
 
 from benchmark import ROOT, trial
@@ -23,6 +24,26 @@ def patch(source):
 
 def digest(contents):
     return hashlib.sha256(contents.encode()).hexdigest()
+
+
+def verify_released_empty_line_guard(contents):
+    start = contents.find('const getIncrementalEdits =')
+    if start != -1:
+        end = contents.index('\n};', start)
+        function = contents[start:end]
+        if function.index('oldLine.length === 0') > function.index('const newLine ='):
+            raise ValueError('released artifact lacks expected early return')
+        return
+
+    label_end = contents.find('"getIncrementalEdits"')
+    if label_end == -1:
+        raise ValueError('released artifact lacks incremental edit helper')
+    start = contents.rfind('=r(async(', 0, label_end)
+    if start == -1:
+        raise ValueError('released artifact has an unsupported incremental edit helper')
+    function = contents[start:label_end]
+    if not re.search(r'if\s*\(\s*[\w$]+\.length\s*===\s*0\s*\)\s*return\s+[\w$]+', function):
+        raise ValueError('released artifact lacks expected early return')
 
 
 if __name__ == '__main__':
@@ -53,10 +74,10 @@ if __name__ == '__main__':
         if len(released_files) != 1:
             raise SystemExit('expected one released editor bundle')
         candidate = released_files[0].read_text()
-        start = candidate.index('const getIncrementalEdits =')
-        function = candidate[start:candidate.index('\n};', start)]
-        if function.index('oldLine.length === 0') > function.index('const newLine ='):
-            raise SystemExit('released artifact lacks expected early return')
+        try:
+            verify_released_empty_line_guard(candidate)
+        except (ValueError, IndexError) as error:
+            raise SystemExit(str(error)) from error
     output = ROOT / 'results' / ('released-artifact-comparison.json' if args.released_candidate else 'empty-line-comparison.json')
     output.parent.mkdir(parents=True, exist_ok=True)
     results = {'editor': editor, 'host': {'machine': platform.machine(), 'kernel': platform.release(),

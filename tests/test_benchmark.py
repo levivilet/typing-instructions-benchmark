@@ -14,7 +14,8 @@ from benchmark import (CHARACTER, DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, PROTOCOL
                        zed_post_open_settle_seconds)
 from counters import Capture, parse_counter
 import report
-from compare_empty_line import ANCHOR, REPLACEMENT, patch
+from compare_empty_line import (ANCHOR, REPLACEMENT, patch,
+                                verify_released_empty_line_guard)
 
 
 def trial(count=100):
@@ -57,6 +58,17 @@ class BenchmarkTest(unittest.TestCase):
         for source in ['', ANCHOR + ANCHOR]:
             with self.assertRaises(ValueError):
                 patch(source)
+
+    def test_released_empty_line_guard_accepts_readable_and_minified_bundles(self):
+        readable = ('const getIncrementalEdits = async () => { '
+                    'if (oldLine.length === 0) return empty; '
+                    'const newLine = lines[rowIndex];\n};')
+        minified = 'x=r(async(e,n)=>{if(c.length===0)return ge;},"getIncrementalEdits")'
+        for source in [readable, minified]:
+            with self.subTest(source=source):
+                self.assertIsNone(verify_released_empty_line_guard(source))
+        with self.assertRaises(ValueError):
+            verify_released_empty_line_guard('x=r(async(e,n)=>{return ge;},"getIncrementalEdits")')
 
     def test_protocol_defines_one_character_and_fixed_response_window(self):
         self.assertEqual(PROTOCOL['action'], 'one ASCII x keypress into an empty editor document')
