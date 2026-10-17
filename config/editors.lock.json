@@ -2,10 +2,10 @@
   {
     "id": "lvce",
     "name": "LVCE Editor",
-    "version": "v0.123.6",
-    "archive": "lvce-v0.123.6_arm64.deb",
-    "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.123.6/lvce-v0.123.6_arm64.deb",
-    "sha256": "df3d3ca6e5a857db5bb69bf84f2c6cfb9b20f89ea3edf2fe23ac875c2a82a8e0",
+    "version": "v0.123.19",
+    "archive": "lvce-v0.123.19_arm64.deb",
+    "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.123.19/lvce-v0.123.19_arm64.deb",
+    "sha256": "d04ecd2e72c98bcc187a6f02926ff7797d90848a36524af8f3c1b9f73656927c",
     "binary": "usr/lib/lvce/lvce"
   },
   {
@@ -38,20 +38,20 @@
   {
     "id": "codemirror6",
     "name": "CodeMirror 6 (Electron)",
-    "version": "CodeMirror 6.7.6 / 6.43.14 (minimal state + view; no language extensions)",
-    "archive": "electron-v44.7.2-linux-arm64.zip",
-    "url": "https://github.com/electron/electron/releases/download/v44.7.2/electron-v44.7.2-linux-arm64.zip",
-    "sha256": "f8ecb0702b6a0b10274d2c3043dddaa22da77addcab98e7e0b1e0d4f6c2d93e9",
+    "version": "CodeMirror 6.7.6 / 6.43.14 (minimal state + view; no language extensions; Electron v44.9.0)",
+    "archive": "electron-v44.9.0-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v44.9.0/electron-v44.9.0-linux-arm64.zip",
+    "sha256": "37fe4dfc34a6dd35d65816864cc6ba9484565cda5ad6d29022e0ee3969e0ea15",
     "binary": "electron",
     "app": "codemirror-electron"
   },
   {
     "id": "basic-electron",
     "name": "Basic Electron",
-    "version": "v44.7.2",
-    "archive": "electron-v44.7.2-linux-arm64.zip",
-    "url": "https://github.com/electron/electron/releases/download/v44.7.2/electron-v44.7.2-linux-arm64.zip",
-    "sha256": "f8ecb0702b6a0b10274d2c3043dddaa22da77addcab98e7e0b1e0d4f6c2d93e9",
+    "version": "v44.9.0",
+    "archive": "electron-v44.9.0-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v44.9.0/electron-v44.9.0-linux-arm64.zip",
+    "sha256": "37fe4dfc34a6dd35d65816864cc6ba9484565cda5ad6d29022e0ee3969e0ea15",
     "binary": "electron",
     "app": "basic-electron"
   },
