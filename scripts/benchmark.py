@@ -37,7 +37,7 @@ def command_for(editor, home, fixture):
     if editor_id == 'geany':
         return ['geany', '--new-instance', str(fixture)]
     args = []
-    if editor_id in {'lvce', 'vscode', 'basic-electron', 'codemirror6'}:
+    if editor_id in {'lvce', 'vscode', 'basic-electron', 'codemirror6', 'codemirror5', 'ace'}:
         args += ['--no-sandbox', '--disable-gpu', '--ozone-platform=x11']
     if editor_id in {'lvce', 'vscode', 'zed'}:
         args += ['--user-data-dir', str(home / 'profile')]
@@ -47,8 +47,10 @@ def command_for(editor, home, fixture):
         args += ['--new', '--wait']
     if editor_id == 'basic-electron':
         args += [str(ROOT / 'basic-electron'), str(fixture)]
-    elif editor_id == 'codemirror6':
-        args += [str(ROOT / 'codemirror-electron'), str(fixture)]
+    elif editor_id in {'codemirror6', 'codemirror5', 'ace'}:
+        app = {'codemirror6': 'codemirror-electron', 'codemirror5': 'codemirror5-electron',
+               'ace': 'ace-electron'}[editor_id]
+        args += [str(ROOT / app), str(fixture)]
     else:
         args += [str(fixture)]
     return [binary, *args]
@@ -135,10 +137,12 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                     time.sleep(10)
                     window_id = window['windowId']
                     details.update(window=window, pids=pids, stage='settle')
-                    if editor['id'] == 'codemirror6':
+                    if editor['id'] in {'codemirror6', 'codemirror5', 'ace'}:
                         title = subprocess.check_output(['xdotool', 'getwindowname', window_id], text=True).strip()
-                        if title != f"CodeMirror 6 - {fixture.name}":
-                            raise RuntimeError(f'CodeMirror 6 did not finish loading fixture {fixture.name}: {title!r}')
+                        name = {'codemirror6': 'CodeMirror 6', 'codemirror5': 'CodeMirror 5',
+                                'ace': 'Ace'}[editor['id']]
+                        if title != f"{name} - {fixture.name}":
+                            raise RuntimeError(f'{name} did not finish loading fixture {fixture.name}: {title!r}')
                     subprocess.run(['xdotool', 'windowactivate', '--sync', window_id], check=True)
                     if editor['id'] == 'zed':
                         subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+p'], check=True)
@@ -149,7 +153,8 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                         title = subprocess.check_output(['xdotool', 'getwindowname', window_id], text=True).strip()
                         if fixture.name not in title:
                             raise RuntimeError(f'Zed did not open fixture {fixture.name}: {title!r}')
-                    positions = {'basic-electron': ('200', '160'), 'codemirror6': ('200', '160'), 'lapce': ('500', '150'),
+                    positions = {'basic-electron': ('200', '160'), 'codemirror6': ('200', '160'),
+                                 'codemirror5': ('200', '160'), 'ace': ('200', '160'), 'lapce': ('500', '150'),
                                  'zed': ('800', '135')}
                     x, y = positions.get(editor['id'], ('500', '400'))
                     subprocess.run(['xdotool', 'mousemove', '--window', window_id, x, y], check=True)

@@ -44,6 +44,24 @@ class BenchmarkTest(unittest.TestCase):
         self.assertTrue(saved_content_is_valid('codemirror6', 'x'))
         self.assertFalse(saved_content_is_valid('codemirror6', 'x\n'))
 
+    def test_codemirror5_and_ace_use_electron_apps_and_exact_saved_contents(self):
+        expected = {
+            'codemirror5': ('codemirror5-electron', 'codemirror', '5.65.21'),
+            'ace': ('ace-electron', 'ace-builds', '1.45.0'),
+        }
+        for editor_id, (app_name, dependency, version) in expected.items():
+            with self.subTest(editor=editor_id):
+                editor = next(editor for editor in report.EDITORS if editor['id'] == editor_id)
+                command = command_for(editor, Path('/tmp/profile-home'), Path('/tmp/fixture.txt'))
+                self.assertIn(str(ROOT / app_name), command)
+                self.assertEqual(command[-1], '/tmp/fixture.txt')
+                app = json.loads((ROOT / app_name / 'package.json').read_text())
+                self.assertEqual(app['main'], 'main.js')
+                self.assertEqual(app['dependencies'][dependency], version)
+                self.assertEqual(app['devDependencies']['esbuild'], '0.28.2')
+                self.assertTrue(saved_content_is_valid(editor_id, 'x'))
+                self.assertFalse(saved_content_is_valid(editor_id, 'x\n'))
+
     def test_zed_post_open_settle_setting_is_bounded(self):
         self.assertEqual(DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, 10.0)
         self.assertEqual(zed_post_open_settle_seconds('1'), 1.0)

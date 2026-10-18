@@ -71,7 +71,7 @@ def main():
         archive = target / entry["archive"]
         download(entry, archive)
         extract(entry, archive, target / editor_id)
-        if entry.get("app") == "codemirror-electron":
+        if entry.get("app"):
             app = ROOT / entry["app"]
             subprocess.run(["npm", "ci"], cwd=app, check=True)
             subprocess.run(["npm", "run", "build"], cwd=app, check=True)
