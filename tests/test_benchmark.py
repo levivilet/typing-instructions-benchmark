@@ -14,6 +14,7 @@ from benchmark import (CHARACTER, DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, PROTOCOL
                        zed_post_open_settle_seconds)
 from counters import Capture, parse_counter
 import report
+from install import BUILD_APPS
 from compare_empty_line import (ANCHOR, REPLACEMENT, patch,
                                 verify_released_empty_line_guard)
 
@@ -34,6 +35,10 @@ def result(editor, counts=(100, 300, 200)):
 
 
 class BenchmarkTest(unittest.TestCase):
+    def test_only_bundled_editor_apps_are_built_during_install(self):
+        self.assertEqual(BUILD_APPS, {'codemirror-electron', 'codemirror5-electron', 'ace-electron'})
+        self.assertNotIn('basic-electron', BUILD_APPS)
+
     def test_codemirror_uses_its_electron_app_and_exact_saved_contents(self):
         editor = next(editor for editor in report.EDITORS if editor['id'] == 'codemirror6')
         command = command_for(editor, Path('/tmp/profile-home'), Path('/tmp/fixture.txt'))
@@ -57,6 +62,9 @@ class BenchmarkTest(unittest.TestCase):
                 self.assertEqual(command[-1], '/tmp/fixture.txt')
                 app = json.loads((ROOT / app_name / 'package.json').read_text())
                 self.assertEqual(app['main'], 'main.js')
+                if editor_id == 'codemirror5':
+                    page = (ROOT / app_name / 'index.html').read_text()
+                    self.assertIn('href=\"renderer.bundle.css\"', page)
                 self.assertEqual(app['dependencies'][dependency], version)
                 self.assertEqual(app['devDependencies']['esbuild'], '0.28.2')
                 self.assertTrue(saved_content_is_valid(editor_id, 'x'))

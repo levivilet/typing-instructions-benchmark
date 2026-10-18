@@ -10,6 +10,7 @@ async function start() {
     mode: null,
   })
 
+  editor.focus()
   document.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
       event.preventDefault()
