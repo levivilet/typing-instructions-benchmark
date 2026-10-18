@@ -14,6 +14,7 @@ from benchmark import (CHARACTER, DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, PROTOCOL
                        zed_post_open_settle_seconds)
 from counters import Capture, parse_counter
 import report
+from install import BUILD_APPS
 from compare_empty_line import (ANCHOR, REPLACEMENT, patch,
                                 verify_released_empty_line_guard)
 
@@ -34,6 +35,10 @@ def result(editor, counts=(100, 300, 200)):
 
 
 class BenchmarkTest(unittest.TestCase):
+    def test_only_bundled_editor_apps_are_built_during_install(self):
+        self.assertEqual(BUILD_APPS, {'codemirror-electron', 'codemirror5-electron', 'ace-electron'})
+        self.assertNotIn('basic-electron', BUILD_APPS)
+
     def test_codemirror_uses_its_electron_app_and_exact_saved_contents(self):
         editor = next(editor for editor in report.EDITORS if editor['id'] == 'codemirror6')
         command = command_for(editor, Path('/tmp/profile-home'), Path('/tmp/fixture.txt'))
@@ -43,6 +48,27 @@ class BenchmarkTest(unittest.TestCase):
         self.assertEqual(app['main'], 'main.js')
         self.assertTrue(saved_content_is_valid('codemirror6', 'x'))
         self.assertFalse(saved_content_is_valid('codemirror6', 'x\n'))
+
+    def test_codemirror5_and_ace_use_electron_apps_and_exact_saved_contents(self):
+        expected = {
+            'codemirror5': ('codemirror5-electron', 'codemirror', '5.65.21'),
+            'ace': ('ace-electron', 'ace-builds', '1.45.0'),
+        }
+        for editor_id, (app_name, dependency, version) in expected.items():
+            with self.subTest(editor=editor_id):
+                editor = next(editor for editor in report.EDITORS if editor['id'] == editor_id)
+                command = command_for(editor, Path('/tmp/profile-home'), Path('/tmp/fixture.txt'))
+                self.assertIn(str(ROOT / app_name), command)
+                self.assertEqual(command[-1], '/tmp/fixture.txt')
+                app = json.loads((ROOT / app_name / 'package.json').read_text())
+                self.assertEqual(app['main'], 'main.js')
+                if editor_id == 'codemirror5':
+                    page = (ROOT / app_name / 'index.html').read_text()
+                    self.assertIn('href=\"renderer.bundle.css\"', page)
+                self.assertEqual(app['dependencies'][dependency], version)
+                self.assertEqual(app['devDependencies']['esbuild'], '0.28.2')
+                self.assertTrue(saved_content_is_valid(editor_id, 'x'))
+                self.assertFalse(saved_content_is_valid(editor_id, 'x\n'))
 
     def test_zed_post_open_settle_setting_is_bounded(self):
         self.assertEqual(DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, 10.0)
