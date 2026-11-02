@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 from benchmark import (CHARACTER, DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, PROTOCOL, command_for,
                        RESPONSE_WINDOW_SECONDS, is_main_window, saved_content_is_valid,
                        zed_post_open_settle_seconds)
-from counters import Capture, parse_counter
+from counters import Capture, parse_counter, parse_counter_or_idle
 import report
 from install import BUILD_APPS
 from compare_empty_line import (ANCHOR, REPLACEMENT, patch,
@@ -163,6 +163,12 @@ class BenchmarkTest(unittest.TestCase):
 
     def test_counter_rejects_unsupported_zero_and_multiplexing(self):
         self.assertEqual(parse_counter('123;;instructions;group;100;100.00;;'), 123)
+        self.assertIsNone(parse_counter_or_idle('<not counted>;;instructions;group;0;100.00;;'))
+        for invalid in ['<not supported>;;instructions;group;0;100.00;;',
+                        '0;;instructions;group;100;100.00;;',
+                        '<not counted>;;instructions;group;0;100.00;;\n<not counted>;;instructions;group;0;100.00;;']:
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                parse_counter_or_idle(invalid)
         for count, running in [('<not supported>', '100'), ('0', '100'), ('123', '50'), ('123', 'nan')]:
             with self.assertRaises(ValueError):
                 parse_counter(f'{count};;instructions;group;100;{running};;')

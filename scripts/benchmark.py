@@ -199,6 +199,7 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                         if fixture.read_text() != '':
                             raise RuntimeError('warm-up undo did not restore empty document')
                     capture.start()
+                    cpu_usage_started = capture.cpu_usage_usec() if idle else None
                     measured_started = time.monotonic()
                     if idle:
                         # Match the input driver's elapsed time without sending an event.
@@ -210,7 +211,10 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                     if remaining > 0:
                         time.sleep(remaining)
                     capture.cutoff()
+                    cpu_usage_finished = capture.cpu_usage_usec() if idle else None
                     result = capture.finish()
+                    if idle:
+                        result['cpuUsageUsec'] = cpu_usage_finished - cpu_usage_started
                     result.update(valid=True, readiness=window, lvceWorkspace=lvce_workspace,
                                   diagnosticWarmup=warm,
                                   character=None if idle else CHARACTER, focusWindow=focused_window,

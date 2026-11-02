@@ -36,10 +36,13 @@ class PlaintextComparisonTest(unittest.TestCase):
         valid = {'valid': True, 'diagnosticWarmup': False, 'savedContent': 'x', 'cutoffAcknowledged': True,
                  'inputToCutoffSeconds': 1.01, 'focusPid': 12, 'pidsAtInput': [12, 13], 'instructions': 123}
         validate_trial(valid)
-        validate_trial({**valid, 'savedContent': ''}, idle=True)
+        validate_trial({**valid, 'savedContent': '', 'instructions': None, 'cpuUsageUsec': 25}, idle=True)
+        for changes in [{'cpuUsageUsec': None}, {'cpuUsageUsec': -1}]:
+            with self.subTest(idle_changes=changes), self.assertRaises(ValueError):
+                validate_trial({**valid, 'savedContent': '', **changes}, idle=True)
         for changes in [{'valid': False}, {'savedContent': ''}, {'savedContent': 'xx'}, {'savedContent': 'x\n'},
                         {'cutoffAcknowledged': False}, {'inputToCutoffSeconds': .5}, {'focusPid': 99},
-                        {'instructions': 0}, {'diagnosticWarmup': True}]:
+                        {'instructions': 0}, {'instructions': None}, {'diagnosticWarmup': True}]:
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 validate_trial({**copy.deepcopy(valid), **changes})
 

@@ -27,7 +27,11 @@ def validate_trial(result, *, idle=False):
         raise ValueError('one-second acknowledged cutoff is required')
     if result.get('focusPid') not in result.get('pidsAtInput', []):
         raise ValueError('focus must belong to the editor cgroup')
-    if not isinstance(result.get('instructions'), int) or result['instructions'] <= 0:
+    if idle:
+        usage = result.get('cpuUsageUsec')
+        if not isinstance(usage, int) or usage < 0:
+            raise ValueError('a nonnegative cgroup CPU-time delta is required for idle controls')
+    elif not isinstance(result.get('instructions'), int) or result['instructions'] <= 0:
         raise ValueError('positive retired instructions are required')
 
 
