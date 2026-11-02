@@ -101,7 +101,9 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
         d = Path(directory)
         home = d / 'home'
         home.mkdir()
-        fixture = d / 'typing-fixture.txt'
+        fixture_directory = d / 'workspace' if lvce_workspace else d
+        fixture_directory.mkdir(exist_ok=True)
+        fixture = fixture_directory / 'typing-fixture.txt'
         fixture.write_text('')
         actual_home = pwd.getpwuid(int(os.environ['SUDO_UID'])).pw_dir if 'SUDO_UID' in os.environ else os.environ.get('HOME', str(home))
         env = {**os.environ, 'HOME': actual_home if editor['id'] == 'lvce' else str(home), 'LC_ALL': 'C', 'LIBGL_ALWAYS_SOFTWARE': '1',
@@ -115,7 +117,7 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
         (home / 'runtime').chmod(0o700)
         if 'SUDO_UID' in env:
             uid, gid = int(env['SUDO_UID']), int(env['SUDO_GID'])
-            for path in [d, home, fixture, *home.iterdir()]:
+            for path in [d, home, fixture_directory, fixture, *home.iterdir()]:
                 os.chown(path, uid, gid)
         command = command_for(editor, home, fixture, lvce_workspace=lvce_workspace)
         details = {'stage': 'launch', 'command': command, 'fixture': str(fixture)}
@@ -150,13 +152,19 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                     subprocess.run(['xdotool', 'windowactivate', '--sync', window_id], check=True)
                     if editor['id'] == 'lvce' and lvce_workspace:
                         subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+p'], check=True)
+                        # The palette acquires focus asynchronously. Keep filename
+                        # input out of the editor before starting hardware counters.
+                        time.sleep(.5)
                         subprocess.run(['xdotool', 'type', '--clearmodifiers', '--delay', '0', '--', fixture.name], check=True)
                         time.sleep(.5)
                         subprocess.run(['xdotool', 'key', '--clearmodifiers', 'Return'], check=True)
                         time.sleep(1)
                         title = subprocess.check_output(['xdotool', 'getwindowname', window_id], text=True).strip()
-                        if fixture.name not in title:
-                            raise RuntimeError(f'LVCE did not open fixture {fixture.name}: {title!r}')
+                        # LVCE titles contain the workspace name, not the active file.
+                        # The exact post-cutoff save verifies the selected document.
+                        details['workspaceWindowTitle'] = title
+                        if fixture.read_text() != '':
+                            raise RuntimeError('fixture changed before first-character capture')
                         details['workspaceProtocol'] = 'directory + quick-open; no document edits before capture'
                     if editor['id'] == 'zed':
                         subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+p'], check=True)
