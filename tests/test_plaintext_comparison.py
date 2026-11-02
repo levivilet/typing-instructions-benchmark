@@ -28,6 +28,20 @@ class PlaintextComparisonTest(unittest.TestCase):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 validate_trial({**copy.deepcopy(valid), **changes})
 
+class WorkspaceAdapterTest(unittest.TestCase):
+    def test_adapter_preserves_measurement_body_and_fails_on_changed_harness(self):
+        from compare_plaintext_cpu import workspace_trial
+        source = ("command.append(str(fixture))\n"
+                  "                prepare_lvce_fixture(keyboard, fixture, initial_contents)\n"
+                  "measurement = typing_measurement(process, keyboard, fixture, sample_seconds, cadence_seconds)")
+        adapted = workspace_trial(source)
+        self.assertIn("fixture.parent if editor['id'] == 'lvce' else fixture", adapted)
+        self.assertIn('keyboard.open_file(fixture.name)', adapted)
+        self.assertIn('measurement = typing_measurement(process, keyboard, fixture, sample_seconds, cadence_seconds)', adapted)
+        for invalid in ['', source + source]:
+            with self.assertRaises(ValueError):
+                workspace_trial(invalid)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -19,5 +19,25 @@
     "repository": "lvce-editor/editor-worker",
     "baseline": "25b2ee3b747a4ae449649df8f6ed5467c9e2938a",
     "candidate": "a5415b2c1d31de255165c7df1c5603c2352fa4db"
+  },
+  "cpu": {
+    "harnessCommit": "5b990c40db9f211a19da76b0b79b973da3026fe6",
+    "lvce": {
+      "id": "lvce",
+      "name": "LVCE Editor",
+      "version": "v0.127.4",
+      "archive": "lvce-v0.127.4_amd64.deb",
+      "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.127.4/lvce-v0.127.4_amd64.deb",
+      "sha256": "500a9ea0615bdd9fa0114ff32d9434e26f2ad1e74149fe47449d93173cc2452b",
+      "binary": "usr/lib/lvce/lvce"
+    },
+    "electron": {
+      "id": "electron-matched",
+      "version": "44.9.2",
+      "archive": "electron-v44.9.2-linux-x64.zip",
+      "url": "https://github.com/electron/electron/releases/download/v44.9.2/electron-v44.9.2-linux-x64.zip",
+      "sha256": "1aade790bad6524c42f257f099141d811f218595c6e865cc1975c042158bd43a",
+      "binary": "electron"
+    }
   }
 }

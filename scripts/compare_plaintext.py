@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import platform
 import statistics
@@ -66,7 +67,7 @@ def run(args):
         'lock': lock, 'bundles': {name: hashlib.sha256(data).hexdigest() for name, data in variants.items()},
         'host': {'machine': platform.machine(), 'kernel': platform.release(), 'cpuinfo': Path('/proc/cpuinfo').read_text(),
                  'perf': subprocess.check_output([args.perf, '--version'], text=True).strip()},
-        'runUrl': __import__('os').environ.get('BENCHMARK_RUN_URL'),
+        'runUrl': os.environ.get('BENCHMARK_RUN_URL'),
         'baseline': [], 'candidate': [], 'idle': [], 'controls': [],
     }
     output.parent.mkdir(parents=True, exist_ok=True)

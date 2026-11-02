@@ -126,3 +126,9 @@ empty fixture without typing or warming up before capture. Real HOME is
 preserved for LVCE; XDG and Chromium state are private for every trial. All
 counter, cutoff, focus and exact saved-input gates remain active. Diagnostic
 results do not replace the existing complete nine-editor report matrix.
+
+The same workflow's separate x86-64 job runs the pinned CPU benchmark harness
+with three fresh-profile 180-second, 1 Hz trials for each LVCE bundle and CM5/CM6.
+Each trial has a separate 30-second idle measurement, native focus/cadence checks,
+and exact saved contents. It uses the same bundle bytes as the ARM64 comparison.
+CPU percentages and first-character retired instructions are reported separately.

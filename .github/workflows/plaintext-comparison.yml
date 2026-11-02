@@ -5,10 +5,10 @@ on:
 permissions:
   contents: read
 jobs:
-  comparison:
-    name: ARM64 plaintext matched comparison
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 45
+  bundles:
+    name: Build matched editor bundles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - name: Read pinned source revisions
@@ -38,6 +38,28 @@ jobs:
           git checkout --detach "$CANDIDATE_SOURCE"
           node -e "import('./packages/build/src/bundleJs.ts').then(m=>m.bundleJs())"
           cp .tmp/dist/dist/editorWorkerMain.js ../plaintext-candidate.js
+      - uses: actions/upload-artifact@v5
+        with:
+          name: plaintext-editor-bundles
+          include-hidden-files: true
+          path: |
+            .tmp/plaintext-baseline.js
+            .tmp/plaintext-candidate.js
+          if-no-files-found: error
+  comparison:
+    name: ARM64 plaintext matched comparison
+    needs: bundles
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: plaintext-editor-bundles
+          path: .tmp
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.12.1'
       - name: Install desktop and hardware counters
         run: |
           sudo apt-get update
@@ -57,5 +79,47 @@ jobs:
         with:
           name: plaintext-matched-comparison
           path: results/
+          if-no-files-found: error
+          retention-days: 90
+  cpu:
+    name: X64 sustained typing matched comparison
+    needs: bundles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: plaintext-editor-bundles
+          path: .tmp
+      - uses: actions/checkout@v5
+        with:
+          repository: levivilet/lvce-typing-cpu-benchmark
+          ref: 5b990c40db9f211a19da76b0b79b973da3026fe6
+          path: .tmp/cpu-harness
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.12.1'
+      - name: Install desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 curl xz-utils xvfb xauth xdotool x11-utils xclip openbox \
+            libgtk-3-0 libnss3 libgbm1 libxss1 libxtst6 libxkbcommon-x11-0 libxkbfile1 libsecret-1-0 \
+            mesa-utils mesa-vulkan-drivers libvulkan1 libasound2t64
+      - name: Validate process accounting
+        run: python3 -m unittest discover -s .tmp/cpu-harness/tests
+      - name: Compare three fresh-profile 180-second trials per variant
+        env:
+          BENCHMARK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BENCHMARK_COMMIT: ${{ github.sha }}
+        run: |
+          xvfb-run -a -s '-screen 0 1280x900x24' bash scripts/compare-plaintext-cpu.sh
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: plaintext-cpu-matched-comparison
+          path: |
+            results/
+            .tmp/cpu-harness/results/diagnostics/
           if-no-files-found: error
           retention-days: 90
