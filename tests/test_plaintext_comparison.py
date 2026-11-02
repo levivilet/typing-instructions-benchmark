@@ -1,11 +1,12 @@
 import copy
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'scripts'))
 from benchmark import command_for
-from compare_plaintext import validate_trial
+from compare_plaintext import installed_editor, validate_trial
 
 
 class PlaintextComparisonTest(unittest.TestCase):
@@ -16,6 +17,20 @@ class PlaintextComparisonTest(unittest.TestCase):
         self.assertEqual(command_for(editor, Path('/tmp/profile'), fixture, lvce_workspace=True)[-1], str(fixture.parent))
         control = {'id': 'codemirror5', 'binary': 'electron'}
         self.assertEqual(command_for(control, Path('/tmp/profile'), fixture, lvce_workspace=True)[-1], str(fixture))
+
+    def test_alternate_installation_launches_without_placeholder_editor_directories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for editor_id, binary in [('lvce', 'usr/lib/lvce/lvce'), ('codemirror5', 'electron'), ('codemirror6', 'electron')]:
+                installation = root / 'actual-installation'
+                executable = installation / binary
+                executable.parent.mkdir(parents=True, exist_ok=True)
+                executable.touch()
+                editor = installed_editor({'id': editor_id, 'binary': binary}, installation)
+                command = command_for(editor, root / 'profile', root / 'fixture.txt')
+                self.assertEqual(Path(command[0]), executable)
+                self.assertTrue(Path(command[0]).is_file())
+                self.assertFalse((root / editor_id).exists())
 
     def test_diagnostic_acceptance_rejects_missing_input_focus_cutoff_and_warmup(self):
         valid = {'valid': True, 'diagnosticWarmup': False, 'savedContent': 'x', 'cutoffAcknowledged': True,

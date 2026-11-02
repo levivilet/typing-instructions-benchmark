@@ -12,6 +12,10 @@ from benchmark import ROOT, PROTOCOL, trial
 from install import download, extract
 
 
+def installed_editor(entry, installation):
+    return {**entry, 'binary': str((installation / entry['binary']).resolve())}
+
+
 def validate_trial(result, *, idle=False):
     if not result.get('valid'):
         raise ValueError(f'invalid trial: {result}')
@@ -40,7 +44,7 @@ def run(args):
     archive = target / lvce['archive']
     download(lvce, archive)
     extract(lvce, archive, target / 'lvce-comparison')
-    editor = {**lvce, 'binary': '../lvce-comparison/' + lvce['binary']}
+    editor = installed_editor(lvce, target / 'lvce-comparison')
     electron = lock['electron']
     archive = target / electron['archive']
     download(electron, archive)
@@ -49,7 +53,7 @@ def run(args):
     controls = []
     for editor_id in ['codemirror5', 'codemirror6']:
         original = next(e for e in entries if e['id'] == editor_id)
-        control = {**original, 'binary': '../electron-matched/electron', 'runtime': electron}
+        control = installed_editor({**original, 'binary': electron['binary'], 'runtime': electron}, target / electron['id'])
         app = ROOT / original['app']
         subprocess.run(['nice', 'npm', 'ci'], cwd=app, check=True)
         subprocess.run(['npm', 'run', 'build'], cwd=app, check=True)
