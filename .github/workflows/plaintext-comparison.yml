@@ -1,0 +1,61 @@
+name: Plaintext typing comparison
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  comparison:
+    name: ARM64 plaintext matched comparison
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - name: Read pinned source revisions
+        id: source
+        run: |
+          node -e 'const s=require("./config/plaintext-comparison.lock.json").source; console.log("baseline="+s.baseline);console.log("candidate="+s.candidate)' >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v5
+        with:
+          repository: lvce-editor/editor-worker
+          ref: ${{ steps.source.outputs.candidate }}
+          fetch-depth: 0
+          path: .tmp/editor-worker
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .tmp/editor-worker/.nvmrc
+      - name: Build both bundles with identical dependencies
+        working-directory: .tmp/editor-worker
+        env:
+          BASELINE_SOURCE: ${{ steps.source.outputs.baseline }}
+          CANDIDATE_SOURCE: ${{ steps.source.outputs.candidate }}
+        run: |
+          git diff --exit-code "$BASELINE_SOURCE" "$CANDIDATE_SOURCE" -- '*package*.json'
+          git checkout --detach "$BASELINE_SOURCE"
+          nice npm ci
+          node -e "import('./packages/build/src/bundleJs.ts').then(m=>m.bundleJs())"
+          cp .tmp/dist/dist/editorWorkerMain.js ../plaintext-baseline.js
+          git checkout --detach "$CANDIDATE_SOURCE"
+          node -e "import('./packages/build/src/bundleJs.ts').then(m=>m.bundleJs())"
+          cp .tmp/dist/dist/editorWorkerMain.js ../plaintext-candidate.js
+      - name: Install desktop and hardware counters
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y linux-tools-generic python3 curl xz-utils xvfb xauth xdotool x11-utils openbox \
+            libgtk-3-0 libnss3 libgbm1 libxss1 libxtst6 libxkbcommon-x11-0 libxkbfile1 libsecret-1-0 \
+            mesa-utils mesa-vulkan-drivers libvulkan1 libasound2t64
+          sudo sysctl kernel.perf_event_paranoid=-1
+      - name: Validate hardware accounting and compare first-character instructions
+        env:
+          BENCHMARK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          PERF=$(find -L /usr/lib/linux-tools -name perf -type f | sort | tail -n 1)
+          sudo env LC_ALL=C python3 scripts/validate_accounting.py "$PERF"
+          xvfb-run -a -s '-screen 0 1280x900x24' bash scripts/compare-plaintext.sh "$PERF"
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: plaintext-matched-comparison
+          path: results/
+          if-no-files-found: error
+          retention-days: 90

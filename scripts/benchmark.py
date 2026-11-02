@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import pwd
 import subprocess
 import tempfile
 import time
@@ -31,7 +32,7 @@ PROTOCOL = {
 }
 
 
-def command_for(editor, home, fixture):
+def command_for(editor, home, fixture, *, lvce_workspace=False):
     binary = str(ROOT / '.tmp/apps' / editor['id'] / editor['binary'])
     editor_id = editor['id']
     if editor_id == 'geany':
@@ -51,6 +52,8 @@ def command_for(editor, home, fixture):
         app = {'codemirror6': 'codemirror-electron', 'codemirror5': 'codemirror5-electron',
                'ace': 'ace-electron'}[editor_id]
         args += [str(ROOT / app), str(fixture)]
+    elif editor_id == 'lvce' and lvce_workspace:
+        args += [str(fixture.parent)]
     else:
         args += [str(fixture)]
     return [binary, *args]
@@ -93,14 +96,15 @@ def visible_window(pids):
     return None
 
 
-def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, *, idle=False, warm=False, capture_type=Capture):
+def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS, *, idle=False, warm=False, capture_type=Capture, lvce_workspace=False):
     with tempfile.TemporaryDirectory(prefix='typing-trial-') as directory:
         d = Path(directory)
         home = d / 'home'
         home.mkdir()
         fixture = d / 'typing-fixture.txt'
         fixture.write_text('')
-        env = {**os.environ, 'HOME': str(home), 'LC_ALL': 'C', 'LIBGL_ALWAYS_SOFTWARE': '1',
+        actual_home = pwd.getpwuid(int(os.environ['SUDO_UID'])).pw_dir if 'SUDO_UID' in os.environ else os.environ.get('HOME', str(home))
+        env = {**os.environ, 'HOME': actual_home if editor['id'] == 'lvce' else str(home), 'LC_ALL': 'C', 'LIBGL_ALWAYS_SOFTWARE': '1',
                'GALLIUM_DRIVER': 'llvmpipe', 'ZED_ALLOW_EMULATED_GPU': '1',
                'ELECTRON_OZONE_PLATFORM_HINT': 'x11'}
         for key, name in [('XDG_CONFIG_HOME', 'config'), ('XDG_DATA_HOME', 'data'),
@@ -113,7 +117,7 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
             uid, gid = int(env['SUDO_UID']), int(env['SUDO_GID'])
             for path in [d, home, fixture, *home.iterdir()]:
                 os.chown(path, uid, gid)
-        command = command_for(editor, home, fixture)
+        command = command_for(editor, home, fixture, lvce_workspace=lvce_workspace)
         details = {'stage': 'launch', 'command': command, 'fixture': str(fixture)}
         failure_diagnostics = {}
         try:
@@ -144,6 +148,16 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                         if title != f"{name} - {fixture.name}":
                             raise RuntimeError(f'{name} did not finish loading fixture {fixture.name}: {title!r}')
                     subprocess.run(['xdotool', 'windowactivate', '--sync', window_id], check=True)
+                    if editor['id'] == 'lvce' and lvce_workspace:
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+p'], check=True)
+                        subprocess.run(['xdotool', 'type', '--clearmodifiers', '--delay', '0', '--', fixture.name], check=True)
+                        time.sleep(.5)
+                        subprocess.run(['xdotool', 'key', '--clearmodifiers', 'Return'], check=True)
+                        time.sleep(1)
+                        title = subprocess.check_output(['xdotool', 'getwindowname', window_id], text=True).strip()
+                        if fixture.name not in title:
+                            raise RuntimeError(f'LVCE did not open fixture {fixture.name}: {title!r}')
+                        details['workspaceProtocol'] = 'directory + quick-open; no document edits before capture'
                     if editor['id'] == 'zed':
                         subprocess.run(['xdotool', 'key', '--clearmodifiers', 'ctrl+p'], check=True)
                         subprocess.run(['xdotool', 'type', '--clearmodifiers', '--delay', '0', '--', fixture.name], check=True)
@@ -189,7 +203,7 @@ def trial(editor, perf, zed_settle_seconds=DEFAULT_ZED_POST_OPEN_SETTLE_SECONDS,
                         time.sleep(remaining)
                     capture.cutoff()
                     result = capture.finish()
-                    result.update(valid=True, readiness=window,
+                    result.update(valid=True, readiness=window, lvceWorkspace=lvce_workspace,
                                   diagnosticWarmup=warm,
                                   character=None if idle else CHARACTER, focusWindow=focused_window,
                                   focusPid=focused_pid, pidsAtInput=pids,

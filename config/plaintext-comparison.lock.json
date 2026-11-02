@@ -1,0 +1,23 @@
+{
+  "lvce": {
+    "id": "lvce",
+    "version": "v0.127.4",
+    "archive": "lvce-v0.127.4_arm64.deb",
+    "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.127.4/lvce-v0.127.4_arm64.deb",
+    "sha256": "89949d4cf9dd55fea37515e2da12ece34e37b8327c38e10e1d8aaf3c033622c5",
+    "binary": "usr/lib/lvce/lvce"
+  },
+  "electron": {
+    "id": "electron-matched",
+    "version": "44.9.2",
+    "archive": "electron-v44.9.2-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v44.9.2/electron-v44.9.2-linux-arm64.zip",
+    "sha256": "f113a7f1f04ddb09f2e9b7bf4785f45eb1cb310dd9f2183e01f44c0a7b8df77d",
+    "binary": "electron"
+  },
+  "source": {
+    "repository": "lvce-editor/editor-worker",
+    "baseline": "25b2ee3b747a4ae449649df8f6ed5467c9e2938a",
+    "candidate": "f6ed1d9f6b50066dda73a5d127d2dcf13c6b9444"
+  }
+}
