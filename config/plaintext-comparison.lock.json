@@ -18,7 +18,7 @@
   "source": {
     "repository": "lvce-editor/editor-worker",
     "baseline": "25b2ee3b747a4ae449649df8f6ed5467c9e2938a",
-    "candidate": "6dc42ce60001c1d43fb8164e50966f7ac210f595"
+    "candidate": "12a992d073430f48ece931ca25ea21f6758e2438"
   },
   "cpu": {
     "harnessCommit": "5b990c40db9f211a19da76b0b79b973da3026fe6",
