@@ -24,6 +24,17 @@ def parse_counter(raw):
     return count
 
 
+def parse_counter_or_idle(raw):
+    try:
+        return parse_counter(raw)
+    except ValueError:
+        rows = [line.split(';') for line in raw.splitlines()
+                if len(line.split(';')) >= 6 and line.split(';')[2].strip() == 'instructions']
+        if len(rows) == 1 and rows[0][0].strip() == '<not counted>':
+            return None
+        raise
+
+
 class Capture:
     def __init__(self, perf, directory):
         self.group = Path('/sys/fs/cgroup') / ('startup-' + uuid.uuid4().hex)
@@ -97,8 +108,19 @@ class Capture:
         self.process.wait(timeout=5)
         self.log.flush()
         raw = (self.directory / 'perf.log').read_text()
-        return {'instructions': parse_counter(raw), 'rawCounter': raw,
+        # Quiet idle windows can legitimately retire zero instructions. The
+        # separate cgroup CPU-time delta is recorded for those controls.
+        # Typing trials still require a positive hardware count downstream.
+        instructions = parse_counter_or_idle(raw)
+        return {'instructions': instructions, 'rawCounter': raw,
                 'source': 'perf stat instructions, per-CPU cgroup', 'cutoffAcknowledged': True}
+
+    def cpu_usage_usec(self):
+        for line in (self.group / 'cpu.stat').read_text().splitlines():
+            name, value = line.split()
+            if name == 'usage_usec':
+                return int(value)
+        raise RuntimeError('cgroup cpu.stat has no usage_usec')
 
     def __exit__(self, *args):
         # Disable before killing anything, including when readiness fails.

@@ -115,3 +115,20 @@ xvfb-run -a -s '-screen 0 1280x800x24' bash scripts/compare.sh "$PERF" --release
 
 Its version-to-version change can include unrelated improvements; keep it
 separate from the isolated source-change result.
+
+The dedicated `Plaintext typing comparison` workflow compares two immutable
+editor-worker source revisions from `config/plaintext-comparison.lock.json`
+inside the same checksum-pinned LVCE 0.127.4 Debian application. It builds both
+readable bundles with the same dependency graph, runs thirty alternating pairs,
+then retains separate no-input controls and matched Electron 44.9.2 CM5/CM6
+trials. The LVCE comparison opens a valid workspace directory and quick-opens an
+empty fixture without typing or warming up before capture. Real HOME is
+preserved for LVCE; XDG and Chromium state are private for every trial. All
+counter, cutoff, focus and exact saved-input gates remain active. Diagnostic
+results do not replace the existing complete nine-editor report matrix.
+
+The same workflow's separate x86-64 job runs the pinned CPU benchmark harness
+with three fresh-profile 180-second, 1 Hz trials for each LVCE bundle and CM5/CM6.
+Each trial has a separate 30-second idle measurement, native focus/cadence checks,
+and exact saved contents. It uses the same bundle bytes as the ARM64 comparison.
+CPU percentages and first-character retired instructions are reported separately.
