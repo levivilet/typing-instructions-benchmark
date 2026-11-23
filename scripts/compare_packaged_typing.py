@@ -26,6 +26,11 @@ def run(args):
     versions = json.loads((ROOT / 'config/packaged-typing.lock.json').read_text())
     variants = {key: {**locked[spec['id']], **spec} for key, spec in versions.items()}
     probes = os.environ.get('BENCHMARK_PACKAGED_PROBES') == 'true'
+    css_acceptance = os.environ.get('BENCHMARK_PACKAGED_CSS_ACCEPTANCE') == 'true'
+    if probes and css_acceptance:
+        raise ValueError('choose only one diagnostic comparison')
+    if css_acceptance:
+        variants = {'lvce-current': variants['lvce-current'], 'css-dirty-dot': variants['lvce-current'], 'cm5-matched': variants['cm5-matched']}
     if probes:
         current = variants['lvce-current']
         variants = {'lvce-current': current, **dict.fromkeys(PROBES, current)}
