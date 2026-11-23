@@ -2,10 +2,16 @@ name: LVCE typing diagnosis
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      packaged_comparison:
+        description: Measure released LVCE against CodeMirror 5
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   diagnosis:
+    if: ${{ !inputs.packaged_comparison }}
     name: LVCE idle controls and profile
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
@@ -35,6 +41,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
   comparison:
+    if: ${{ !inputs.packaged_comparison }}
     name: LVCE empty-line comparison
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
@@ -64,6 +71,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
   released:
+    if: ${{ !inputs.packaged_comparison }}
     name: LVCE released-artifact comparison
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
@@ -89,6 +97,43 @@ jobs:
         if: always()
         with:
           name: lvce-released-artifact-comparison
+          path: results/
+          if-no-files-found: error
+          retention-days: 90
+  packaged:
+    if: ${{ inputs.packaged_comparison }}
+    name: Packaged LVCE and CodeMirror 5
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.12.1'
+      - name: Install desktop and perf
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y linux-tools-generic build-essential python3 curl xz-utils xvfb xauth xdotool x11-utils openbox \
+            libgtk-3-0 libnss3 libgbm1 libxss1 libxtst6 libxkbcommon-x11-0 libxkbfile1 libsecret-1-0 \
+            mesa-utils mesa-vulkan-drivers libvulkan1 libasound2t64
+          sudo sysctl kernel.perf_event_paranoid=-1
+      - name: Build pinned CodeMirror 5
+        working-directory: codemirror5-electron
+        run: |
+          npm ci
+          npm run build
+      - name: Validate hardware accounting and measure typing and idle controls
+        env:
+          BENCHMARK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BENCHMARK_COMMIT: ${{ github.sha }}
+        run: |
+          PERF=$(find -L /usr/lib/linux-tools -name perf -type f | sort | tail -n 1)
+          sudo env LC_ALL=C python3 scripts/validate_accounting.py "$PERF"
+          xvfb-run -a -s '-screen 0 1280x800x24' bash scripts/diagnose.sh "$PERF" scripts/compare_packaged_typing.py
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: packaged-typing-comparison
           path: results/
           if-no-files-found: error
           retention-days: 90

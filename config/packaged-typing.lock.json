@@ -1,0 +1,21 @@
+{
+  "lvce-archived": {"id": "lvce", "electron": "44.9.2"},
+  "cm5-archived": {"id": "codemirror5", "electron": "44.9.0"},
+  "lvce-current": {
+    "id": "lvce",
+    "version": "v0.128.6",
+    "electron": "45.3.3",
+    "archive": "lvce-v0.128.6_arm64.deb",
+    "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.128.6/lvce-v0.128.6_arm64.deb",
+    "sha256": "c17b9be5b86b273de86b6a1efeaab9738270b37697d3175565b790e462f99955"
+  },
+  "cm5-matched": {
+    "id": "codemirror5",
+    "version": "CodeMirror 5.65.21 / Electron v45.3.3",
+    "electron": "45.3.3",
+    "configuration": "CodeMirror 5.65.21; plain text mode, no line numbers or extensions; Electron v45.3.3",
+    "archive": "electron-v45.3.3-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v45.3.3/electron-v45.3.3-linux-arm64.zip",
+    "sha256": "d0f66fca246ae244b8a9e08344b1d9383534e912ef364a80c5afe6e1698705a2"
+  }
+}
