@@ -62,11 +62,17 @@ def run(args):
     for key in editors:
         groups = {}
         for idle in (False, True):
-            counts = [item['instructions'] for item in results['trials']
-                      if item['variant'] == key and item['idle'] == idle]
+            trials = [item for item in results['trials'] if item['variant'] == key and item['idle'] == idle]
+            counts = [item['instructions'] for item in trials if item['instructions'] is not None]
             groups['idle' if idle else 'typing'] = {
-                'median': statistics.median(counts), 'min': min(counts), 'max': max(counts),
+                'counted': len(counts),
+                'uncounted': len(trials) - len(counts),
+                'median': statistics.median(counts) if counts else None,
+                'min': min(counts) if counts else None,
+                'max': max(counts) if counts else None,
             }
+            if idle:
+                groups['idle']['medianCpuUsec'] = statistics.median(item['cpuUsageUsec'] for item in trials)
         results['summary'][key] = groups
     save()
     print(json.dumps(results['summary']), flush=True)

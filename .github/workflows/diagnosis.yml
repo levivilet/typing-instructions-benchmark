@@ -128,6 +128,7 @@ jobs:
           BENCHMARK_COMMIT: ${{ github.sha }}
         run: |
           PERF=$(find -L /usr/lib/linux-tools -name perf -type f | sort | tail -n 1)
+          mkdir -p .tmp
           sudo env LC_ALL=C python3 scripts/validate_accounting.py "$PERF"
           xvfb-run -a -s '-screen 0 1280x800x24' bash scripts/diagnose.sh "$PERF" scripts/compare_packaged_typing.py
       - uses: actions/upload-artifact@v5
