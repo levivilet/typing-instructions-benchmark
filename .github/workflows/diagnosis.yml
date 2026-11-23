@@ -7,11 +7,15 @@ on:
         description: Measure released LVCE against CodeMirror 5
         type: boolean
         default: false
+      packaged_probes:
+        description: Measure tightly scoped diagnostic interventions in released LVCE
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   diagnosis:
-    if: ${{ !inputs.packaged_comparison }}
+    if: ${{ !inputs.packaged_comparison && !inputs.packaged_probes }}
     name: LVCE idle controls and profile
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
@@ -41,7 +45,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
   comparison:
-    if: ${{ !inputs.packaged_comparison }}
+    if: ${{ !inputs.packaged_comparison && !inputs.packaged_probes }}
     name: LVCE empty-line comparison
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
@@ -71,7 +75,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
   released:
-    if: ${{ !inputs.packaged_comparison }}
+    if: ${{ !inputs.packaged_comparison && !inputs.packaged_probes }}
     name: LVCE released-artifact comparison
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
@@ -101,7 +105,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
   packaged:
-    if: ${{ inputs.packaged_comparison }}
+    if: ${{ inputs.packaged_comparison || inputs.packaged_probes }}
     name: Packaged LVCE and CodeMirror 5
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 35
@@ -118,12 +122,14 @@ jobs:
             mesa-utils mesa-vulkan-drivers libvulkan1 libasound2t64
           sudo sysctl kernel.perf_event_paranoid=-1
       - name: Build pinned CodeMirror 5
+        if: ${{ !inputs.packaged_probes }}
         working-directory: codemirror5-electron
         run: |
           npm ci
           npm run build
       - name: Validate hardware accounting and measure typing and idle controls
         env:
+          BENCHMARK_PACKAGED_PROBES: ${{ inputs.packaged_probes }}
           BENCHMARK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           BENCHMARK_COMMIT: ${{ github.sha }}
         run: |

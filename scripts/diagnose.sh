@@ -7,4 +7,4 @@ for attempt in {1..100}; do
   if xprop -root _NET_SUPPORTING_WM_CHECK | grep -q 'window id'; then break; fi
   sleep .05
 done
-sudo --preserve-env=DISPLAY,XAUTHORITY,BENCHMARK_RUN_URL,BENCHMARK_COMMIT python3 "${2:-scripts/diagnose_lvce.py}" --perf "$1"
+sudo --preserve-env=DISPLAY,XAUTHORITY,BENCHMARK_RUN_URL,BENCHMARK_COMMIT,BENCHMARK_PACKAGED_PROBES python3 "${2:-scripts/diagnose_lvce.py}" --perf "$1"

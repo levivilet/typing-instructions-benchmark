@@ -11,6 +11,7 @@ from benchmark import PROTOCOL, ROOT, trial
 from compare_plaintext import installed_editor, validate_trial
 import diagnose_lvce
 from install import download, extract
+from packaged_probes import PROBES, apply_probe
 
 
 def run(args):
@@ -24,18 +25,26 @@ def run(args):
     locked = {item['id']: item for item in json.loads((ROOT / 'config/editors.lock.json').read_text())}
     versions = json.loads((ROOT / 'config/packaged-typing.lock.json').read_text())
     variants = {key: {**locked[spec['id']], **spec} for key, spec in versions.items()}
+    probes = os.environ.get('BENCHMARK_PACKAGED_PROBES') == 'true'
+    if probes:
+        current = variants['lvce-current']
+        variants = {'lvce-current': current, **dict.fromkeys(PROBES, current)}
     target = ROOT / '.tmp/apps'
     target.mkdir(parents=True, exist_ok=True)
     editors = {}
+    patches = {}
     for key, variant in variants.items():
         archive = target / variant['archive']
         download(variant, archive)
         extract(variant, archive, target / key)
         editors[key] = installed_editor(variant, target / key)
+        if key in PROBES:
+            patches[key] = apply_probe(target / key, key)
 
     results = {
         'protocol': {**PROTOCOL, 'repeats': args.repeats},
         'variants': variants,
+        'diagnosticPatches': patches,
         'host': {'machine': platform.machine(), 'kernel': platform.release(),
                  'cpuinfo': Path('/proc/cpuinfo').read_text(),
                  'perf': subprocess.check_output([args.perf, '--version'], text=True).strip()},
@@ -48,9 +57,10 @@ def run(args):
     def save():
         output.write_text(json.dumps(results, indent=2) + '\n')
 
-    cases = [(key, idle) for key in editors for idle in (False, True)]
+    actions = (False,) if probes else (False, True)
+    cases = [(key, idle) for key in editors for idle in actions]
     for repeat in range(args.repeats):
-        offset = (repeat // 2 * 2) % len(cases)
+        offset = (repeat // 2 * len(actions)) % len(cases)
         order = cases[offset:] + cases[:offset]
         for key, idle in (order if repeat % 2 == 0 else reversed(order)):
             result = trial(editors[key], args.perf, idle=idle)
@@ -61,7 +71,7 @@ def run(args):
     results['summary'] = {}
     for key in editors:
         groups = {}
-        for idle in (False, True):
+        for idle in actions:
             trials = [item for item in results['trials'] if item['variant'] == key and item['idle'] == idle]
             counts = [item['instructions'] for item in trials if item['instructions'] is not None]
             groups['idle' if idle else 'typing'] = {
@@ -77,6 +87,8 @@ def run(args):
     save()
     print(json.dumps(results['summary']), flush=True)
 
+    if probes:
+        return
     for key in ('lvce-current', 'cm5-matched'):
         diagnose_lvce.OUTPUT = output.parent / f'profile-{key}'
         diagnose_lvce.OUTPUT.mkdir()
