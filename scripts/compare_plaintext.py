@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import statistics
 import subprocess
 
@@ -57,11 +58,15 @@ def run(args):
     controls = []
     for editor_id in ['codemirror5', 'codemirror6']:
         original = next(e for e in entries if e['id'] == editor_id)
-        control = installed_editor({**original, 'binary': electron['binary'], 'runtime': electron}, target / electron['id'])
+        control = {**original, **electron, 'id': editor_id,
+                   'version': original['version'], 'runtime': electron}
+        for field in ('version', 'configuration'):
+            if field in control:
+                control[field] = re.sub(r'Electron v[\d.]+', f'Electron v{electron["version"]}', control[field])
+        controls.append(installed_editor(control, target / electron['id']))
         app = ROOT / original['app']
         subprocess.run(['nice', 'npm', 'ci'], cwd=app, check=True)
         subprocess.run(['npm', 'run', 'build'], cwd=app, check=True)
-        controls.append(control)
     bundle, = (target / 'lvce-comparison').rglob('editorWorkerMain.js')
     original = bundle.read_bytes()
     variants = {name: Path(path).read_bytes() for name, path in [('baseline', args.baseline), ('candidate', args.candidate)]}
