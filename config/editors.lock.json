@@ -2,28 +2,28 @@
   {
     "id": "lvce",
     "name": "LVCE Editor",
-    "version": "v0.127.5",
-    "archive": "lvce-v0.127.5_arm64.deb",
-    "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.127.5/lvce-v0.127.5_arm64.deb",
-    "sha256": "80fece05627cdb5a3d1cd911408bbbba85eed3ad969c534da36ebbf988b4a6e1",
+    "version": "v0.128.6",
+    "archive": "lvce-v0.128.6_arm64.deb",
+    "url": "https://github.com/lvce-editor/lvce-editor/releases/download/v0.128.6/lvce-v0.128.6_arm64.deb",
+    "sha256": "c17b9be5b86b273de86b6a1efeaab9738270b37697d3175565b790e462f99955",
     "binary": "usr/lib/lvce/lvce"
   },
   {
     "id": "vscode",
     "name": "VS Code",
-    "version": "1.142.0",
-    "archive": "vscode-1.142.0-arm64.tar.gz",
-    "url": "https://vscode.download.prss.microsoft.com/dbazure/download/stable/6d62b1d5dace93a33b3a6d3eca1317bd5e15bcb1/code-stable-arm64-1792034875.tar.gz",
-    "sha256": "cb4ce5183a29b1a13aeb6409d5430c896fa35aad21097be1f874fbb4cf1e7e62",
+    "version": "1.147.0",
+    "archive": "vscode-1.147.0-arm64.tar.gz",
+    "url": "https://vscode.download.prss.microsoft.com/dbazure/download/stable/8a14f0cc1b08d531eb83255ea3764ae22aa932b5/code-stable-arm64-1794902859.tar.gz",
+    "sha256": "b137f53a29a1debf9fc30027823556863202f94c10d924dd70f2d2370795412d",
     "binary": "VSCode-linux-arm64/code"
   },
   {
     "id": "zed",
     "name": "Zed",
-    "version": "v1.24.2",
-    "archive": "zed-v1.24.2-linux-aarch64.tar.gz",
-    "url": "https://github.com/zed-industries/zed/releases/download/v1.24.2/zed-linux-aarch64.tar.gz",
-    "sha256": "96a54806a7e286452078bdfc94b63c7bf6b8324ffcb16c5c60ff1fd96743ea45",
+    "version": "v1.29.3",
+    "archive": "zed-v1.29.3-linux-aarch64.tar.gz",
+    "url": "https://github.com/zed-industries/zed/releases/download/v1.29.3/zed-linux-aarch64.tar.gz",
+    "sha256": "5f1de233ac02d8c9eff68e9ab4207274df3ddbd2cf9fa6f8a80ef5487f03e8ee",
     "binary": "zed.app/libexec/zed-editor"
   },
   {
@@ -38,20 +38,20 @@
   {
     "id": "codemirror6",
     "name": "CodeMirror 6 (Electron)",
-    "version": "CodeMirror 6.7.6 / 6.43.14 (minimal state + view; no language extensions; Electron v44.9.0)",
-    "archive": "electron-v44.9.0-linux-arm64.zip",
-    "url": "https://github.com/electron/electron/releases/download/v44.9.0/electron-v44.9.0-linux-arm64.zip",
-    "sha256": "37fe4dfc34a6dd35d65816864cc6ba9484565cda5ad6d29022e0ee3969e0ea15",
+    "version": "CodeMirror 6.7.6 / 6.43.15 (minimal state + view; no language extensions; Electron v45.4.1)",
+    "archive": "electron-v45.4.1-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v45.4.1/electron-v45.4.1-linux-arm64.zip",
+    "sha256": "3da04c450fa682e3b80961e92a918a1c2a1a10796527a7e63dec7b8e466b6334",
     "binary": "electron",
     "app": "codemirror-electron"
   },
   {
     "id": "basic-electron",
     "name": "Basic Electron",
-    "version": "v44.9.0",
-    "archive": "electron-v44.9.0-linux-arm64.zip",
-    "url": "https://github.com/electron/electron/releases/download/v44.9.0/electron-v44.9.0-linux-arm64.zip",
-    "sha256": "37fe4dfc34a6dd35d65816864cc6ba9484565cda5ad6d29022e0ee3969e0ea15",
+    "version": "v45.4.1",
+    "archive": "electron-v45.4.1-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v45.4.1/electron-v45.4.1-linux-arm64.zip",
+    "sha256": "3da04c450fa682e3b80961e92a918a1c2a1a10796527a7e63dec7b8e466b6334",
     "binary": "electron",
     "app": "basic-electron"
   },
@@ -65,23 +65,23 @@
   {
     "id": "codemirror5",
     "name": "CodeMirror 5 (Electron)",
-    "version": "CodeMirror 5.65.21 / Electron v44.9.0",
-    "archive": "electron-v44.9.0-linux-arm64.zip",
-    "url": "https://github.com/electron/electron/releases/download/v44.9.0/electron-v44.9.0-linux-arm64.zip",
-    "sha256": "37fe4dfc34a6dd35d65816864cc6ba9484565cda5ad6d29022e0ee3969e0ea15",
+    "version": "CodeMirror 5.65.21 / Electron v45.4.1",
+    "archive": "electron-v45.4.1-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v45.4.1/electron-v45.4.1-linux-arm64.zip",
+    "sha256": "3da04c450fa682e3b80961e92a918a1c2a1a10796527a7e63dec7b8e466b6334",
     "binary": "electron",
     "app": "codemirror5-electron",
-    "configuration": "CodeMirror 5.65.21; plain text mode, no line numbers or extensions; Electron v44.9.0"
+    "configuration": "CodeMirror 5.65.21; plain text mode, no line numbers or extensions; Electron v45.4.1"
   },
   {
     "id": "ace",
     "name": "Ace (Electron)",
-    "version": "Ace 1.45.0 (plain text; workers disabled) / Electron v44.9.0",
-    "archive": "electron-v44.9.0-linux-arm64.zip",
-    "url": "https://github.com/electron/electron/releases/download/v44.9.0/electron-v44.9.0-linux-arm64.zip",
-    "sha256": "37fe4dfc34a6dd35d65816864cc6ba9484565cda5ad6d29022e0ee3969e0ea15",
+    "version": "Ace 1.45.2 (plain text; workers disabled) / Electron v45.4.1",
+    "archive": "electron-v45.4.1-linux-arm64.zip",
+    "url": "https://github.com/electron/electron/releases/download/v45.4.1/electron-v45.4.1-linux-arm64.zip",
+    "sha256": "3da04c450fa682e3b80961e92a918a1c2a1a10796527a7e63dec7b8e466b6334",
     "binary": "electron",
     "app": "ace-electron",
-    "configuration": "Ace 1.45.0; plain text mode, TextMate theme, no gutter or workers; Electron v44.9.0"
+    "configuration": "Ace 1.45.2; plain text mode, TextMate theme, no gutter or workers; Electron v45.4.1"
   }
 ]

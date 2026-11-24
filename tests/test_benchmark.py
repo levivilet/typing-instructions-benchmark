@@ -52,7 +52,7 @@ class BenchmarkTest(unittest.TestCase):
     def test_codemirror5_and_ace_use_electron_apps_and_exact_saved_contents(self):
         expected = {
             'codemirror5': ('codemirror5-electron', 'codemirror', '5.65.21'),
-            'ace': ('ace-electron', 'ace-builds', '1.45.0'),
+            'ace': ('ace-electron', 'ace-builds', '1.45.2'),
         }
         for editor_id, (app_name, dependency, version) in expected.items():
             with self.subTest(editor=editor_id):

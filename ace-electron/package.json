@@ -7,7 +7,7 @@
     "build": "esbuild renderer.js --bundle --format=iife --outfile=renderer.bundle.js"
   },
   "dependencies": {
-    "ace-builds": "1.45.0"
+    "ace-builds": "1.45.2"
   },
   "devDependencies": {
     "esbuild": "0.28.2"
